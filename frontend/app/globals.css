@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #030712;
+  --background: #010414;
   --foreground: #f8fafc;
-  --muted: #0f172a;
+  --muted: #0b1220;
   --surface: #111827;
+  --surface-strong: #0a1120;
   --accent: #38bdf8;
+  --accent-2: #7c3aed;
+  --accent-3: #22d3ee;
+  --text-muted: #94a3b8;
 }
 
 @theme inline {
@@ -16,12 +20,134 @@
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(circle at top, #0f172a 0%, #010414 60%);
   color: var(--foreground);
   font-family: var(--font-geist-sans), "Inter", system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100vh;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 10% 15%;
+  background: radial-gradient(
+    circle,
+    rgba(56, 189, 248, 0.08),
+    rgba(124, 58, 237, 0.05),
+    transparent 70%
+  );
+  filter: blur(60px);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: -1;
 }
 
 section {
   scroll-margin-top: 80px;
+}
+
+.eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tier-one {
+  background: linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(7, 11, 20, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.8), 0 0 40px rgba(59, 130, 246, 0.15);
+  border-radius: 32px;
+}
+
+.tier-two {
+  background: rgba(11, 16, 28, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 24px;
+  box-shadow: 0 15px 40px rgba(2, 6, 23, 0.6);
+}
+
+.tier-three {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 20px;
+}
+
+.soft-divider {
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  padding-top: 1.5rem;
+}
+
+.ambient-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.ambient-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.2), transparent 60%),
+    radial-gradient(circle at 80% 0%, rgba(124, 58, 237, 0.2), transparent 55%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.glow-pulse {
+  animation: glowPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 0 rgba(56, 189, 248, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(56, 189, 248, 0.15);
+  }
+}
+
+.animate-rise {
+  animation: riseIn 0.9s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes riseIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hover-lift {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+}
+
+.chip-active {
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease,
+    transform 200ms ease;
+}
+
+.chip-active:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .glow-pulse,
+  .hover-lift,
+  .chip-active {
+    animation: none !important;
+    transition-duration: 0ms !important;
+  }
 }

@@ -56,14 +56,16 @@ export default function WrapScreen() {
         </p>
       </header>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-950/50 p-6">
+      <div className="tier-one p-6">
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
           Session summary
         </p>
-        <p className="mt-3 text-lg text-slate-100">{wrapUpData.sessionSummary}</p>
+        <p className="mt-3 text-lg leading-relaxed text-slate-100">
+          {wrapUpData.sessionSummary}
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-3">
         <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5">
           <p className="text-xs uppercase tracking-[0.4em] text-emerald-200">
             Proof of work
@@ -102,26 +104,28 @@ export default function WrapScreen() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-slate-100">
+      <div className="tier-one p-6 text-sm text-slate-100">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
               Project memory snapshot
             </p>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm text-slate-300">
               Structured to paste directly into the Project Memory doc.
             </p>
           </div>
           <button
             onClick={copySnapshot}
-            className={`rounded-full px-4 py-2 text-xs font-semibold ${
-              copied ? "bg-emerald-500 text-slate-900" : "bg-slate-900 text-white"
+            className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
+              copied
+                ? "bg-emerald-500 text-slate-900 shadow-lg shadow-emerald-500/30"
+                : "bg-white text-slate-900 shadow-lg shadow-slate-900/10 hover:bg-slate-100"
             }`}
           >
             {copied ? "Copied" : "Copy snapshot"}
           </button>
         </div>
-        <div className="mt-4 space-y-4 rounded-2xl border border-white/20 bg-white/70 p-5 text-slate-900">
+        <div className="mt-4 space-y-4 rounded-2xl border border-white/20 bg-white/80 p-5 text-slate-900 shadow-inner">
           {snapshotStructure.map((section) => {
             const value = wrapUpData.snapshot[section.key];
             return (
@@ -130,13 +134,13 @@ export default function WrapScreen() {
                   {section.label}
                 </p>
                 {Array.isArray(value) ? (
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed">
                     {value.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm font-medium">{value}</p>
+                  <p className="mt-2 text-sm font-medium leading-relaxed">{value}</p>
                 )}
               </div>
             );

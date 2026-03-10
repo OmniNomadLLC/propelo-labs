@@ -25,7 +25,7 @@ export default function TasksScreen() {
           <button
             key={mode}
             onClick={() => setActiveMode(mode)}
-            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+            className={`chip-active rounded-full border px-4 py-2 text-xs font-semibold ${
               activeMode === mode
                 ? "border-white bg-white text-slate-900"
                 : "border-white/20 text-slate-200 hover:border-white"
@@ -36,14 +36,14 @@ export default function TasksScreen() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {taskBoard.columns.map((column) => {
           const dimColumn =
             activeMode !== "All" && activeMode !== column.title;
           return (
             <div
               key={column.title}
-              className={`rounded-2xl border border-white/10 bg-slate-950/40 p-4 transition ${
+              className={`tier-two p-4 transition ${
                 dimColumn ? "opacity-40" : "opacity-100"
               }`}
             >
@@ -68,7 +68,7 @@ export default function TasksScreen() {
         })}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 text-sm text-slate-300">
+      <div className="tier-three p-5 text-sm text-slate-200">
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Rules</p>
         <p className="mt-2">
           Every task requires a proof-of-work artifact. Promote tasks to Ready

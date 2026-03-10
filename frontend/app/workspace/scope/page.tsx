@@ -20,9 +20,9 @@ export default function ScopeScreen() {
         </p>
       </header>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-6">
+      <div className="tier-one p-6">
         <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="tier-three p-4">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
               Smallest useful version
             </p>
@@ -30,7 +30,7 @@ export default function ScopeScreen() {
               {scopeBlueprint.overview.smallestUsefulVersion}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="tier-three p-4">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
               MVP boundary
             </p>
@@ -38,7 +38,7 @@ export default function ScopeScreen() {
               {scopeBlueprint.overview.mvpBoundary}
             </p>
           </div>
-          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
+          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 text-emerald-50">
             <p className="text-xs uppercase tracking-[0.4em] text-emerald-200">
               Blueprint summary
             </p>
@@ -76,13 +76,16 @@ export default function ScopeScreen() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6">
+      <div className="tier-two p-6">
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
           Phased blueprint
         </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {scopeBlueprint.phases.map((phase) => (
-            <div key={phase.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div
+              key={phase.id}
+              className="tier-three hover-lift h-full p-5"
+            >
               <div className="flex items-start justify-between text-xs text-slate-400">
                 <span className="font-semibold tracking-[0.3em]">{phase.id}</span>
                 <span>Mode: Architect</span>
@@ -114,7 +117,7 @@ export default function ScopeScreen() {
                 onClick={() => setSelectedPath(step)}
                 className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
                   selectedPath === step
-                    ? "border-white bg-white text-slate-900"
+                    ? "glow-pulse border-white bg-white text-slate-900"
                     : "border-white/20 text-slate-100 hover:border-white"
                 }`}
               >
@@ -134,7 +137,7 @@ export default function ScopeScreen() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+        <div className="tier-three p-5">
           <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
             Automation flow logic
           </p>

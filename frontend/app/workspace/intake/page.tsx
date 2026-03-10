@@ -4,7 +4,7 @@ import { useState } from "react";
 import { intakeData, projectSummary } from "../demo-data";
 
 const FieldCard = ({ title, items }: { title: string; items: string[] }) => (
-  <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-5">
+  <div className="tier-three p-5">
     <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{title}</p>
     <ul className="mt-3 space-y-2 text-sm text-slate-100">
       {items.map((item) => (
@@ -65,7 +65,7 @@ export default function IntakeScreen() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-6">
+      <div className="tier-one p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex-1">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
@@ -73,7 +73,7 @@ export default function IntakeScreen() {
             </p>
             <p className="mt-3 text-lg text-slate-100">{intakeData.mission}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 text-sm text-slate-200 md:w-72">
+          <div className="tier-three p-4 text-sm text-slate-200 md:w-72">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
               Guided next step
             </p>
@@ -85,13 +85,13 @@ export default function IntakeScreen() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+      <div className="tier-two p-6">
         <div className="flex flex-wrap gap-3">
           {intakeData.guidance.prompts.map((prompt) => (
             <button
               key={prompt}
               onClick={() => setActivePrompt(prompt)}
-              className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+              className={`chip-active rounded-full border px-4 py-2 text-xs font-semibold ${
                 activePrompt === prompt
                   ? "border-sky-400/60 bg-sky-400/10 text-sky-100"
                   : "border-white/10 text-slate-300 hover:border-sky-400/40"
@@ -115,7 +115,7 @@ export default function IntakeScreen() {
         <FieldCard title="Constraints" items={intakeData.constraints} />
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+      <div className="tier-three p-5">
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
           Working assumptions
         </p>
@@ -132,7 +132,7 @@ export default function IntakeScreen() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+      <div className="tier-three p-5">
         <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
           Intake actions to lock
         </p>

@@ -4131,3 +4131,84 @@ Positioning the product as a full GHL or n8n replacement in Phase 1
 
 Overly technical or e
 
+
+## TL;DR
+- Landing page mid-sections were rebuilt with icon-led layouts so each block (Problem, Flow, Features, Personas, Differentiation) feels distinct and product-led.
+- Project Brain’s signal monitor became a tier-two “readiness snapshot” panel with mini metrics, confidence index, and system-style framing.
+- Workspace shell, intake, tasks, wrap, and globals were tweaked for consistent contrast, spacing, and CTA clarity after the new visuals.
+- All work stayed frontend-only with mocked data; backend/auth/API layers remain untouched.
+
+---
+
+## What changed today
+- Introduced icon-driven Problem, Solution Flow, Features, Personas, and Differentiation sections on the landing page for richer information design.
+- Added inline SVG icon components to support the new visuals without external libraries.
+- Redesigned the Project Brain signal monitor into a premium readiness snapshot with metrics, badges, and commentary.
+- Adjusted workspace shell/sidebar/CTA styling plus intake, tasks, and wrap cards to align with the updated visual system.
+- Tuned global styles (tier surfaces, typography helpers) for better contrast and hierarchy.
+
+---
+
+## Outcome / result
+- The landing narrative now feels like a serious AI operating system rather than repeated cards, increasing desirability and clarity.
+- The Brain screen communicates health and readiness through a true system panel, reinforcing the OS positioning.
+- Supporting screens inherit consistent contrast, spacing, and CTA cues, making the experience more product-like end to end.
+
+---
+
+## Problems / weaknesses found
+- Previous landing sections were visually repetitive and failed to communicate the product promise; Brain’s signal monitor felt like placeholder counts.
+- Responsive behavior for the richer layouts still needs a focused QA pass to ensure text and icons behave well at narrower widths.
+
+---
+
+## What was improved / fixed
+- Pain, flow, feature, persona, and differentiation stories now each have bespoke layouts with icons, labels, and supporting copy.
+- Project Brain gained a meaningful readiness panel complete with metrics and confidence index, solving the weak “signal monitor” issue.
+- CTA clarity, iconography, and global contrast were tightened so the premium dark direction reads more confidently.
+
+---
+
+## Intentionally not changed
+- Backend, auth, persistence, APIs, data models, routing structure, and additional screens were untouched.
+- All data remains mock/demo; no real integrations or state management were introduced.
+
+---
+
+## Mocks / placeholders
+- Landing and workspace content still rely on seeded copy and `demo-data.ts` objects; no backend data sources exist yet.
+- Signal monitor metrics derive from local demo arrays; confidence badge is presentational only.
+
+---
+
+## Risks / follow-ups
+- Need responsive/QA review to confirm new layouts hold up on tablet widths and smaller desktops.
+- Icon components are inline; consider centralizing if future passes add more usage.
+- Ensure future functional work keeps the iconography and hierarchy consistent to avoid regressions.
+
+---
+
+## Verification
+- `npm run lint`
+- Route-by-route visual inspection in the Next.js dev server (local)
+
+---
+
+## Touched files
+- frontend/app/page.tsx
+- frontend/app/workspace/brain/page.tsx
+- frontend/app/workspace/layout.tsx
+- frontend/app/workspace/components.tsx
+- frontend/app/workspace/intake/page.tsx
+- frontend/app/workspace/tasks/page.tsx
+- frontend/app/workspace/wrap/page.tsx
+- frontend/app/globals.css
+
+---
+
+## Commands run
+```bash
+cd frontend
+npm run lint
+git status -sb
+```
