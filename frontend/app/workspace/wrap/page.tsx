@@ -1,6 +1,48 @@
+"use client";
+
+import { useState } from "react";
 import { wrapUpData } from "../demo-data";
 
+type SnapshotKey = keyof typeof wrapUpData.snapshot;
+
+const snapshotStructure: {
+  label: string;
+  type: "text" | "list";
+  key: SnapshotKey;
+}[] = [
+  { label: "Context", type: "text", key: "context" },
+  { label: "Decisions locked in", type: "list", key: "decisions" },
+  { label: "New insights", type: "list", key: "insights" },
+  { label: "What is explicitly out of scope", type: "list", key: "outOfScope" },
+  { label: "Product / UX consequences", type: "list", key: "consequences" },
+  { label: "Next recommended step", type: "text", key: "nextStep" },
+];
+
 export default function WrapScreen() {
+  const [copied, setCopied] = useState(false);
+
+  const copySnapshot = async () => {
+    const snapshotText = snapshotStructure
+      .map((section) => {
+        const value = wrapUpData.snapshot[section.key];
+        if (Array.isArray(value)) {
+          return `${section.label}:\n- ${value.join("\n- ")}`;
+        }
+        return `${section.label}: ${value}`;
+      })
+      .join("\n\n");
+
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(snapshotText);
+      } catch {
+        // noop in prototype
+      }
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <div className="space-y-8">
       <header className="space-y-2">
@@ -60,16 +102,46 @@ export default function WrapScreen() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-slate-100">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
-          Snapshot preview
-        </p>
-        <p className="mt-3 text-base font-medium text-white">
-          {wrapUpData.snapshot}
-        </p>
-        <p className="mt-4 text-xs text-slate-200">
-          Copy this block into the Memory Snapshot template when publishing.
-        </p>
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
+              Project memory snapshot
+            </p>
+            <p className="text-sm text-slate-700">
+              Structured to paste directly into the Project Memory doc.
+            </p>
+          </div>
+          <button
+            onClick={copySnapshot}
+            className={`rounded-full px-4 py-2 text-xs font-semibold ${
+              copied ? "bg-emerald-500 text-slate-900" : "bg-slate-900 text-white"
+            }`}
+          >
+            {copied ? "Copied" : "Copy snapshot"}
+          </button>
+        </div>
+        <div className="mt-4 space-y-4 rounded-2xl border border-white/20 bg-white/70 p-5 text-slate-900">
+          {snapshotStructure.map((section) => {
+            const value = wrapUpData.snapshot[section.key];
+            return (
+              <div key={section.label}>
+                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
+                  {section.label}
+                </p>
+                {Array.isArray(value) ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                    {value.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm font-medium">{value}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

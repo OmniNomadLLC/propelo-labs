@@ -1,6 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import { scopeBlueprint } from "../demo-data";
 
 export default function ScopeScreen() {
+  const [selectedPath, setSelectedPath] = useState(
+    scopeBlueprint.overview.implementationPath[0],
+  );
   return (
     <div className="space-y-10">
       <header className="space-y-2">
@@ -13,6 +19,35 @@ export default function ScopeScreen() {
           crystal-clear boundaries.
         </p>
       </header>
+
+      <div className="rounded-3xl border border-white/10 bg-slate-950/40 p-6">
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+              Smallest useful version
+            </p>
+            <p className="mt-2 text-sm text-slate-200">
+              {scopeBlueprint.overview.smallestUsefulVersion}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+              MVP boundary
+            </p>
+            <p className="mt-2 text-sm text-slate-200">
+              {scopeBlueprint.overview.mvpBoundary}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4">
+            <p className="text-xs uppercase tracking-[0.4em] text-emerald-200">
+              Blueprint summary
+            </p>
+            <p className="mt-2 text-sm text-emerald-50">
+              {scopeBlueprint.overview.summary}
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-green-400/30 bg-green-500/10 p-5">
@@ -67,23 +102,59 @@ export default function ScopeScreen() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-5">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
-          Automation flow logic
-        </p>
-        <div className="mt-4 grid gap-3 md:grid-cols-5">
-          {scopeBlueprint.automationFlow.map((node) => (
-            <div key={node.name} className="rounded-2xl bg-black/20 p-4 text-sm text-slate-100">
-              <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-                {node.name}
-              </p>
-              <p className="mt-2 text-slate-100">{node.detail}</p>
-            </div>
-          ))}
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
+            Recommended implementation path
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {scopeBlueprint.overview.implementationPath.map((step) => (
+              <button
+                key={step}
+                onClick={() => setSelectedPath(step)}
+                className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                  selectedPath === step
+                    ? "border-white bg-white text-slate-900"
+                    : "border-white/20 text-slate-100 hover:border-white"
+                }`}
+              >
+                {step}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/20 bg-black/20 p-4 text-sm text-slate-100">
+            <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+              Currently highlighted step
+            </p>
+            <p className="mt-2">{selectedPath}</p>
+            <p className="mt-2 text-xs text-slate-400">
+              Keep this path visible in Wrap-up so the next mode knows what to
+              execute.
+            </p>
+          </div>
         </div>
-        <p className="mt-4 text-xs text-slate-300">
-          Each stage pairs with QA gates before advancing into the Task Board.
-        </p>
+
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+          <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
+            Automation flow logic
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-5">
+            {scopeBlueprint.automationFlow.map((node) => (
+              <div
+                key={node.name}
+                className="rounded-2xl bg-black/20 p-4 text-sm text-slate-100"
+              >
+                <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
+                  {node.name}
+                </p>
+                <p className="mt-2 text-slate-100">{node.detail}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-slate-300">
+            Each stage pairs with QA gates before advancing into the Task Board.
+          </p>
+        </div>
       </div>
     </div>
   );

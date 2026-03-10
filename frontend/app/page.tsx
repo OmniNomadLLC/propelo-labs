@@ -31,8 +31,10 @@ const flowSteps = [
 
 const featureTiles = [
   "Structured prompts tuned for workflow + automation wedge.",
+  "Guided intake chips that clarify missions before handoff.",
   "Project memory layer that keeps scope and decisions visible.",
   "Guided blueprinting for flows, phases, and QA.",
+  "Copy-ready snapshots for durable handoffs.",
   "Seeded demo states so every screen feels alive day one.",
 ];
 

@@ -25,6 +25,19 @@ export const intakeData = {
     "Clinic already has a review automation we can piggyback",
     "Growth assistant can edit email/SMS copy daily",
   ],
+  guidance: {
+    prompts: [
+      "Clarify tone for SMS vs email sequences",
+      "Narrow Phase 1 to hygiene + first touch",
+      "Surface dependencies before promising outcomes",
+      "Ask for owner definition of a 'reactivated' lead",
+    ],
+    nextActions: [
+      "Tag intake answers that belong in Scope",
+      "Highlight any compliance blockers",
+      "Pin the smallest useful version before ideating variants",
+    ],
+  },
 };
 
 export const brainData = {
@@ -50,6 +63,20 @@ export const brainData = {
 };
 
 export const scopeBlueprint = {
+  overview: {
+    summary:
+      "Lead Reactivation moves from chaos to a four-phase automation plan with QA gates and clear escalation ownership.",
+    smallestUsefulVersion:
+      "Single-segment outreach focused on patients inactive 6-12 months with SMS-first touch.",
+    mvpBoundary:
+      "Phase 02 completion with deliverability + compliance sign-off; no upsell journeys yet.",
+    implementationPath: [
+      "Architect hygiene + tagging inside GHL",
+      "Prototype outreach ladders in Propelo Tasks",
+      "Connect n8n for automation orchestration",
+      "Review + handoff to clinic coordinators",
+    ],
+  },
   inScope: [
     "Data hygiene + tagging plan inside GHL",
     "Multi-channel reactivation flow (SMS + Email)",
@@ -164,6 +191,24 @@ export const wrapUpData = {
     "Connect Propelo Labs tasks to n8n prototypes",
     "Schedule owner walkthrough of Wrap-up packet",
   ],
-  snapshot:
-    "Lead Reactivation is blueprint-complete. Phase 02 build starts once copy + compliance lock this week.",
+  snapshot: {
+    context: "Phase 1 focused on drafting and validating the reactivation blueprint for North River Dental.",
+    decisions: [
+      "Keep Phase 1 limited to hygiene + SMS/email ladder",
+      "Escalations stay manual with Propelo tasks as proof-of-work",
+    ],
+    insights: [
+      "Clinic capacity is the true limiter, so automation must meter replies",
+      "Owner values attribution dashboards more than automation novelty",
+    ],
+    outOfScope: [
+      "Paid traffic boosts",
+      "Multilingual nurture paths",
+    ],
+    consequences: [
+      "Blueprint must expose throughput caps to prevent over-promising",
+      "Wrap-up packet will double as clinic training deck",
+    ],
+    nextStep: "Move into Build mode for Phase 02 once compliance clears the SMS ladder.",
+  },
 };
