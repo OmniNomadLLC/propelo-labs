@@ -24,12 +24,9 @@ class MissionController extends Controller
         return response()->json($mission->toArray());
     }
 
-    /**
-     * @throws ValidationException
-     */
     public function store(Request $request): JsonResponse
     {
-        $data = $this->validateMission($request);
+        $data = $request->all();
         $mission = MissionStore::create($data);
 
         return response()->json($mission->toArray(), 201);

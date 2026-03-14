@@ -5,6 +5,7 @@ use App\Http\Controllers\MissionController;
 use App\Http\Controllers\DecisionController;
 use App\Http\Controllers\RiskController;
 use App\Http\Controllers\MitigationController;
+use App\Http\Controllers\BlueprintController;
 
 Route::prefix('missions')->group(function () {
     Route::get('/', [MissionController::class, 'index']);
@@ -35,4 +36,11 @@ Route::prefix('mitigations')->group(function () {
     Route::post('/', [MitigationController::class, 'store']);
     Route::get('{id}', [MitigationController::class, 'show']);
     Route::put('{id}', [MitigationController::class, 'update']);
+    Route::get('{id}/blueprints', [BlueprintController::class, 'forMitigation']);
+});
+
+Route::prefix('blueprints')->group(function () {
+    Route::post('/', [BlueprintController::class, 'store']);
+    Route::put('{id}', [BlueprintController::class, 'update']);
+    Route::delete('{id}', [BlueprintController::class, 'destroy']);
 });

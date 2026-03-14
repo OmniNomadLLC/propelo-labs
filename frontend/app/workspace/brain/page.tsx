@@ -20,8 +20,13 @@ import {
   type Mitigation,
   type MitigationFields,
 } from "./MitigationCard";
-
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+import {
+  BlueprintCard,
+  BlueprintCreatePanel,
+  type Blueprint,
+  type BlueprintFields,
+} from "./BlueprintCard";
+import { API_BASE } from "@/lib/api";
 
 export default function MissionWorkspacePage() {
   const [mission, setMission] = useState<Mission | null>(null);
@@ -33,6 +38,7 @@ export default function MissionWorkspacePage() {
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [decisionRisks, setDecisionRisks] = useState<Record<string, Risk[]>>({});
   const [riskMitigations, setRiskMitigations] = useState<Record<string, Mitigation[]>>({});
+  const [mitigationBlueprints, setMitigationBlueprints] = useState<Record<string, Blueprint[]>>({});
   const [decisionsLoading, setDecisionsLoading] = useState(false);
   const [decisionsError, setDecisionsError] = useState<string | null>(null);
   const [decisionSavingId, setDecisionSavingId] = useState<string | null>(null);
@@ -45,6 +51,11 @@ export default function MissionWorkspacePage() {
   const [activeMitigationCreate, setActiveMitigationCreate] = useState<string | null>(null);
   const [mitigationSavingId, setMitigationSavingId] = useState<string | null>(null);
   const [isMitigationEditing, setIsMitigationEditing] = useState(false);
+  const [activeBlueprintCreate, setActiveBlueprintCreate] = useState<string | null>(null);
+  const [blueprintSavingId, setBlueprintSavingId] = useState<string | null>(null);
+  const [isBlueprintEditing, setIsBlueprintEditing] = useState(false);
+  const activeStage =
+    isBlueprintEditing ? 4 : isMitigationEditing ? 3 : isRiskEditing ? 2 : isDecisionEditing ? 1 : 0;
 
   useEffect(() => {
     void loadMission();
@@ -55,7 +66,7 @@ export default function MissionWorkspacePage() {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE}/api/missions`, { cache: "no-store" });
+      const response = await fetch(`${API_BASE}/missions`, { cache: "no-store" });
       if (!response.ok) {
         throw new Error("Unable to load mission");
       }
@@ -67,6 +78,7 @@ export default function MissionWorkspacePage() {
         setDecisions([]);
         setDecisionRisks({});
         setRiskMitigations({});
+        setMitigationBlueprints({});
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load mission");
@@ -74,6 +86,7 @@ export default function MissionWorkspacePage() {
       setDecisions([]);
       setDecisionRisks({});
       setRiskMitigations({});
+      setMitigationBlueprints({});
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +96,7 @@ export default function MissionWorkspacePage() {
     try {
       setDecisionsLoading(true);
       setDecisionsError(null);
-      const response = await fetch(`${API_BASE}/api/missions/${missionId}/decisions`, {
+      const response = await fetch(`${API_BASE}/missions/${missionId}/decisions`, {
         cache: "no-store",
       });
       if (!response.ok) {
@@ -117,7 +130,7 @@ export default function MissionWorkspacePage() {
   };
 
   const fetchRisks = async (decisionId: string): Promise<Risk[]> => {
-    const response = await fetch(`${API_BASE}/api/decisions/${decisionId}/risks`, { cache: "no-store" });
+    const response = await fetch(`${API_BASE}/decisions/${decisionId}/risks`, { cache: "no-store" });
     if (!response.ok) {
       return [];
     }
@@ -128,32 +141,61 @@ export default function MissionWorkspacePage() {
     const risks = await fetchRisks(decisionId);
     setDecisionRisks((prev) => ({ ...prev, [decisionId]: risks }));
     const mitigationsMap: Record<string, Mitigation[]> = { ...riskMitigations };
+    const blueprintsMap: Record<string, Blueprint[]> = { ...mitigationBlueprints };
     await Promise.all(
       risks.map(async (risk) => {
         mitigationsMap[risk.id] = await fetchMitigations(risk.id);
+        await Promise.all(
+          mitigationsMap[risk.id].map(async (mitigation) => {
+            blueprintsMap[mitigation.id] = await fetchBlueprints(mitigation.id);
+          }),
+        );
       }),
     );
     setRiskMitigations(mitigationsMap);
+    setMitigationBlueprints(blueprintsMap);
   };
 
   const fetchMitigations = async (riskId: string): Promise<Mitigation[]> => {
-    const response = await fetch(`${API_BASE}/api/risks/${riskId}/mitigations`, { cache: "no-store" });
+    const response = await fetch(`${API_BASE}/risks/${riskId}/mitigations`, { cache: "no-store" });
     if (!response.ok) {
       return [];
     }
     return (await response.json()) as Mitigation[];
   };
 
+  const fetchBlueprints = async (mitigationId: string): Promise<Blueprint[]> => {
+    const response = await fetch(`${API_BASE}/mitigations/${mitigationId}/blueprints`, {
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return [];
+    }
+    return (await response.json()) as Blueprint[];
+  };
+
   const refreshRiskMitigations = async (riskId: string) => {
     const mitigations = await fetchMitigations(riskId);
+    const blueprintsMap: Record<string, Blueprint[]> = { ...mitigationBlueprints };
+    await Promise.all(
+      mitigations.map(async (mitigation) => {
+        blueprintsMap[mitigation.id] = await fetchBlueprints(mitigation.id);
+      }),
+    );
+    setMitigationBlueprints(blueprintsMap);
     setRiskMitigations((prev) => ({ ...prev, [riskId]: mitigations }));
+  };
+
+  const refreshMitigationBlueprints = async (mitigationId: string) => {
+    const blueprints = await fetchBlueprints(mitigationId);
+    setMitigationBlueprints((prev) => ({ ...prev, [mitigationId]: blueprints }));
   };
 
   const saveMission = async (fields: MissionFields) => {
     if (!mission) return;
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE}/api/missions/${mission.id}`, {
+      const response = await fetch(`${API_BASE}/missions/${mission.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
@@ -171,7 +213,7 @@ export default function MissionWorkspacePage() {
   const createMission = async (fields: MissionFields) => {
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE}/api/missions`, {
+      const response = await fetch(`${API_BASE}/missions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
@@ -192,7 +234,7 @@ export default function MissionWorkspacePage() {
     if (!mission) return;
     setDecisionSavingId("new");
     try {
-      const response = await fetch(`${API_BASE}/api/decisions`, {
+      const response = await fetch(`${API_BASE}/decisions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...fields, mission_id: mission.id }),
@@ -211,7 +253,7 @@ export default function MissionWorkspacePage() {
   const updateDecision = async (id: string, fields: DecisionFields) => {
     setDecisionSavingId(id);
     try {
-      const response = await fetch(`${API_BASE}/api/decisions/${id}`, {
+      const response = await fetch(`${API_BASE}/decisions/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
@@ -230,7 +272,7 @@ export default function MissionWorkspacePage() {
   const createRisk = async (decisionId: string, fields: RiskFields) => {
     setRiskSavingId(`new-${decisionId}`);
     try {
-      const response = await fetch(`${API_BASE}/api/risks`, {
+      const response = await fetch(`${API_BASE}/risks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...fields, decision_id: decisionId }),
@@ -249,7 +291,7 @@ export default function MissionWorkspacePage() {
   const updateRisk = async (riskId: string, decisionId: string, fields: RiskFields) => {
     setRiskSavingId(riskId);
     try {
-      const response = await fetch(`${API_BASE}/api/risks/${riskId}`, {
+      const response = await fetch(`${API_BASE}/risks/${riskId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
@@ -266,7 +308,7 @@ export default function MissionWorkspacePage() {
   const createMitigation = async (riskId: string, fields: MitigationFields) => {
     setMitigationSavingId(`new-${riskId}`);
     try {
-      const response = await fetch(`${API_BASE}/api/mitigations`, {
+      const response = await fetch(`${API_BASE}/mitigations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...fields, risk_id: riskId }),
@@ -289,7 +331,7 @@ export default function MissionWorkspacePage() {
   ) => {
     setMitigationSavingId(mitigationId);
     try {
-      const response = await fetch(`${API_BASE}/api/mitigations/${mitigationId}`, {
+      const response = await fetch(`${API_BASE}/mitigations/${mitigationId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(fields),
@@ -303,6 +345,56 @@ export default function MissionWorkspacePage() {
     }
   };
 
+  const createBlueprint = async (mitigationId: string, fields: BlueprintFields) => {
+    setBlueprintSavingId(`new-${mitigationId}`);
+    try {
+      const response = await fetch(`${API_BASE}/blueprints`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...fields, mitigation_id: mitigationId }),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create blueprint");
+      }
+      await refreshMitigationBlueprints(mitigationId);
+      setActiveBlueprintCreate(null);
+      setIsBlueprintEditing(false);
+    } finally {
+      setBlueprintSavingId(null);
+    }
+  };
+
+  const updateBlueprint = async (
+    blueprintId: string,
+    mitigationId: string,
+    fields: BlueprintFields,
+  ) => {
+    setBlueprintSavingId(blueprintId);
+    try {
+      const response = await fetch(`${API_BASE}/blueprints/${blueprintId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to update blueprint");
+      }
+      await refreshMitigationBlueprints(mitigationId);
+    } finally {
+      setBlueprintSavingId(null);
+    }
+  };
+
+  const deleteBlueprint = async (blueprintId: string, mitigationId: string) => {
+    const response = await fetch(`${API_BASE}/blueprints/${blueprintId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok && response.status !== 204) {
+      throw new Error("Unable to delete blueprint");
+    }
+    await refreshMitigationBlueprints(mitigationId);
+  };
+
   return (
     <div className="space-y-8">
       <header className="space-y-2">
@@ -314,9 +406,7 @@ export default function MissionWorkspacePage() {
       </header>
 
       <PipelineIndicator
-        activeStage={
-          isMitigationEditing ? 3 : isRiskEditing ? 2 : isDecisionEditing ? 1 : 0
-        }
+        activeStage={activeStage}
       />
 
       {isLoading ? (
@@ -338,12 +428,14 @@ export default function MissionWorkspacePage() {
         <DecisionsSection
           decisions={decisions}
           decisionRisks={decisionRisks}
+          mitigationBlueprints={mitigationBlueprints}
           isLoading={decisionsLoading}
           error={decisionsError}
           showCreate={showDecisionCreate}
           decisionSavingId={decisionSavingId}
           riskSavingId={riskSavingId}
           activeRiskCreate={activeRiskCreate}
+          activeBlueprintCreate={activeBlueprintCreate}
           onCreateDecision={() => {
             setShowDecisionCreate(true);
             setIsDecisionEditing(true);
@@ -380,13 +472,26 @@ export default function MissionWorkspacePage() {
           onCreateMitigation={createMitigation}
           onMitigationSave={updateMitigation}
           onMitigationEditingChange={(editing) => setIsMitigationEditing(editing)}
+          blueprintSavingId={blueprintSavingId}
+          onShowBlueprintCreate={(mitigationId) => {
+            setActiveBlueprintCreate(mitigationId);
+            setIsBlueprintEditing(true);
+          }}
+          onCancelBlueprintCreate={() => {
+            setActiveBlueprintCreate(null);
+            setIsBlueprintEditing(false);
+          }}
+          onCreateBlueprint={createBlueprint}
+          onBlueprintSave={updateBlueprint}
+          onBlueprintDelete={deleteBlueprint}
+          onBlueprintEditingChange={(editing) => setIsBlueprintEditing(editing)}
         />
       )}
     </div>
   );
 }
 
-const stages = ["Mission", "Decisions", "Risks", "Mitigations", "Blueprint", "Tasks", "Snapshot"];
+const stages = ["Mission", "Decisions", "Risks", "Mitigations", "Blueprints", "Tasks", "Snapshot"];
 
 function PipelineIndicator({ activeStage = 0 }: { activeStage?: number }) {
   return (
@@ -421,6 +526,7 @@ function StageChip({ label, active }: { label: string; active?: boolean }) {
 type DecisionsSectionProps = {
   decisions: Decision[];
   decisionRisks: Record<string, Risk[]>;
+  mitigationBlueprints: Record<string, Blueprint[]>;
   riskMitigations: Record<string, Mitigation[]>;
   isLoading: boolean;
   error: string | null;
@@ -428,6 +534,7 @@ type DecisionsSectionProps = {
   decisionSavingId: string | null;
   riskSavingId: string | null;
   activeRiskCreate: string | null;
+  activeBlueprintCreate: string | null;
   onCreateDecision: () => void;
   onCancelDecisionCreate: () => void;
   onCreateDecisionSubmit: (fields: DecisionFields) => Promise<void>;
@@ -445,11 +552,23 @@ type DecisionsSectionProps = {
   onCreateMitigationSubmit: (riskId: string, fields: MitigationFields) => Promise<void>;
   onMitigationSave: (mitigationId: string, riskId: string, fields: MitigationFields) => Promise<void>;
   onMitigationEditingChange: (editing: boolean) => void;
+  blueprintSavingId: string | null;
+  onShowBlueprintCreate: (mitigationId: string) => void;
+  onCancelBlueprintCreate: () => void;
+  onCreateBlueprint: (mitigationId: string, fields: BlueprintFields) => Promise<void>;
+  onBlueprintSave: (
+    blueprintId: string,
+    mitigationId: string,
+    fields: BlueprintFields,
+  ) => Promise<void>;
+  onBlueprintDelete: (blueprintId: string, mitigationId: string) => Promise<void>;
+  onBlueprintEditingChange: (editing: boolean) => void;
 };
 
 function DecisionsSection({
   decisions,
   decisionRisks,
+  mitigationBlueprints,
   riskMitigations,
   isLoading,
   error,
@@ -457,6 +576,7 @@ function DecisionsSection({
   decisionSavingId,
   riskSavingId,
   activeRiskCreate,
+  activeBlueprintCreate,
   onCreateDecision,
   onCancelDecisionCreate,
   onCreateDecisionSubmit,
@@ -474,6 +594,13 @@ function DecisionsSection({
   onCreateMitigationSubmit,
   onMitigationSave,
   onMitigationEditingChange,
+  blueprintSavingId,
+  onShowBlueprintCreate,
+  onCancelBlueprintCreate,
+  onCreateBlueprint,
+  onBlueprintSave,
+  onBlueprintDelete,
+  onBlueprintEditingChange,
 }: DecisionsSectionProps) {
   return (
     <div className="space-y-4">
@@ -551,6 +678,15 @@ function DecisionsSection({
                 onCreateMitigation={onCreateMitigationSubmit}
                 onMitigationSave={onMitigationSave}
                 onMitigationEditingChange={onMitigationEditingChange}
+                mitigationBlueprints={mitigationBlueprints}
+                activeBlueprintCreate={activeBlueprintCreate}
+                blueprintSavingId={blueprintSavingId}
+                onShowBlueprintCreate={onShowBlueprintCreate}
+                onCancelBlueprintCreate={onCancelBlueprintCreate}
+                onCreateBlueprint={onCreateBlueprint}
+                onBlueprintSave={onBlueprintSave}
+                onBlueprintDelete={onBlueprintDelete}
+                onBlueprintEditingChange={onBlueprintEditingChange}
               />
             </div>
           ))}
@@ -578,6 +714,19 @@ type RiskSectionProps = {
   onCreateMitigation: (riskId: string, fields: MitigationFields) => Promise<void>;
   onMitigationSave: (mitigationId: string, riskId: string, fields: MitigationFields) => Promise<void>;
   onMitigationEditingChange: (editing: boolean) => void;
+  mitigationBlueprints: Record<string, Blueprint[]>;
+  activeBlueprintCreate: string | null;
+  blueprintSavingId: string | null;
+  onShowBlueprintCreate: (mitigationId: string) => void;
+  onCancelBlueprintCreate: () => void;
+  onCreateBlueprint: (mitigationId: string, fields: BlueprintFields) => Promise<void>;
+  onBlueprintSave: (
+    blueprintId: string,
+    mitigationId: string,
+    fields: BlueprintFields,
+  ) => Promise<void>;
+  onBlueprintDelete: (blueprintId: string, mitigationId: string) => Promise<void>;
+  onBlueprintEditingChange: (editing: boolean) => void;
 };
 
 function RiskSection({
@@ -598,6 +747,15 @@ function RiskSection({
   onCreateMitigation,
   onMitigationSave,
   onMitigationEditingChange,
+  mitigationBlueprints,
+  activeBlueprintCreate,
+  blueprintSavingId,
+  onShowBlueprintCreate,
+  onCancelBlueprintCreate,
+  onCreateBlueprint,
+  onBlueprintSave,
+  onBlueprintDelete,
+  onBlueprintEditingChange,
 }: RiskSectionProps) {
   return (
     <div className="space-y-3 border-t border-white/10 pt-4">
@@ -649,6 +807,15 @@ function RiskSection({
                 onCreateMitigation={(fields) => onCreateMitigation(risk.id, fields)}
                 onMitigationSave={(mitigationId, fields) => onMitigationSave(mitigationId, risk.id, fields)}
                 onMitigationEditingChange={onMitigationEditingChange}
+                mitigationBlueprints={mitigationBlueprints}
+                activeBlueprintCreate={activeBlueprintCreate}
+                blueprintSavingId={blueprintSavingId}
+                onShowBlueprintCreate={onShowBlueprintCreate}
+                onCancelBlueprintCreate={onCancelBlueprintCreate}
+                onCreateBlueprint={onCreateBlueprint}
+                onBlueprintSave={onBlueprintSave}
+                onBlueprintDelete={onBlueprintDelete}
+                onBlueprintEditingChange={onBlueprintEditingChange}
               />
             </div>
           ))}
@@ -668,6 +835,19 @@ type MitigationSectionProps = {
   onCreateMitigation: (fields: MitigationFields) => Promise<void>;
   onMitigationSave: (mitigationId: string, fields: MitigationFields) => Promise<void>;
   onMitigationEditingChange: (editing: boolean) => void;
+  mitigationBlueprints: Record<string, Blueprint[]>;
+  activeBlueprintCreate: string | null;
+  blueprintSavingId: string | null;
+  onShowBlueprintCreate: (mitigationId: string) => void;
+  onCancelBlueprintCreate: () => void;
+  onCreateBlueprint: (mitigationId: string, fields: BlueprintFields) => Promise<void>;
+  onBlueprintSave: (
+    blueprintId: string,
+    mitigationId: string,
+    fields: BlueprintFields,
+  ) => Promise<void>;
+  onBlueprintDelete: (blueprintId: string, mitigationId: string) => Promise<void>;
+  onBlueprintEditingChange: (editing: boolean) => void;
 };
 
 function MitigationSection({
@@ -680,6 +860,15 @@ function MitigationSection({
   onCreateMitigation,
   onMitigationSave,
   onMitigationEditingChange,
+  mitigationBlueprints,
+  activeBlueprintCreate,
+  blueprintSavingId,
+  onShowBlueprintCreate,
+  onCancelBlueprintCreate,
+  onCreateBlueprint,
+  onBlueprintSave,
+  onBlueprintDelete,
+  onBlueprintEditingChange,
 }: MitigationSectionProps) {
   return (
     <div className="space-y-3 border-t border-white/10 pt-3">
@@ -714,12 +903,100 @@ function MitigationSection({
       ) : (
         <div className="grid gap-2">
           {mitigations.map((mitigation) => (
-            <MitigationCard
-              key={mitigation.id}
-              mitigation={mitigation}
-              onSave={(fields) => onMitigationSave(mitigation.id, fields)}
-              isSaving={mitigationSavingId === mitigation.id}
-              onEditingChange={onMitigationEditingChange}
+            <div key={mitigation.id} className="space-y-3 rounded-2xl border border-white/15 bg-black/20 p-3">
+              <MitigationCard
+                mitigation={mitigation}
+                onSave={(fields) => onMitigationSave(mitigation.id, fields)}
+                isSaving={mitigationSavingId === mitigation.id}
+                onEditingChange={onMitigationEditingChange}
+              />
+              <BlueprintSection
+                mitigationId={mitigation.id}
+                blueprints={mitigationBlueprints[mitigation.id] ?? []}
+                showCreate={activeBlueprintCreate === mitigation.id}
+                blueprintSavingId={blueprintSavingId}
+                onShowCreate={() => onShowBlueprintCreate(mitigation.id)}
+                onCancelCreate={onCancelBlueprintCreate}
+                onCreateBlueprint={(fields) => onCreateBlueprint(mitigation.id, fields)}
+                onBlueprintSave={(blueprintId, fields) =>
+                  onBlueprintSave(blueprintId, mitigation.id, fields)
+                }
+                onBlueprintDelete={(blueprintId) => onBlueprintDelete(blueprintId, mitigation.id)}
+                onBlueprintEditingChange={onBlueprintEditingChange}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type BlueprintSectionProps = {
+  mitigationId: string;
+  blueprints: Blueprint[];
+  showCreate: boolean;
+  blueprintSavingId: string | null;
+  onShowCreate: () => void;
+  onCancelCreate: () => void;
+  onCreateBlueprint: (fields: BlueprintFields) => Promise<void>;
+  onBlueprintSave: (blueprintId: string, fields: BlueprintFields) => Promise<void>;
+  onBlueprintDelete: (blueprintId: string) => Promise<void>;
+  onBlueprintEditingChange: (editing: boolean) => void;
+};
+
+function BlueprintSection({
+  mitigationId,
+  blueprints,
+  showCreate,
+  blueprintSavingId,
+  onShowCreate,
+  onCancelCreate,
+  onCreateBlueprint,
+  onBlueprintSave,
+  onBlueprintDelete,
+  onBlueprintEditingChange,
+}: BlueprintSectionProps) {
+  return (
+    <div className="space-y-3 border-t border-white/10 pt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Blueprints</p>
+        {!showCreate && (
+          <button
+            onClick={onShowCreate}
+            className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white"
+          >
+            Add blueprint
+          </button>
+        )}
+      </div>
+      {showCreate && (
+        <BlueprintCreatePanel
+          onCreate={async (fields) => {
+            await onCreateBlueprint(fields);
+            onBlueprintEditingChange(false);
+          }}
+          isSaving={blueprintSavingId === `new-${mitigationId}`}
+          onCancel={() => {
+            onCancelCreate();
+            onBlueprintEditingChange(false);
+          }}
+        />
+      )}
+      {blueprints.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-3 text-xs text-slate-400">
+          No blueprints yet.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {blueprints.map((blueprint) => (
+            <BlueprintCard
+              key={blueprint.id}
+              blueprint={blueprint}
+              onSave={(fields) => onBlueprintSave(blueprint.id, fields)}
+              onDelete={() => onBlueprintDelete(blueprint.id)}
+              isSaving={blueprintSavingId === blueprint.id}
+              onEditingChange={onBlueprintEditingChange}
             />
           ))}
         </div>

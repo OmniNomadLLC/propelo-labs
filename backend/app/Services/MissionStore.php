@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Mission;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
 class MissionStore
@@ -57,16 +56,16 @@ class MissionStore
     {
         $now = Carbon::now()->toISOString();
         $mission = new Mission([
-            'id' => $attributes['id'] ?? 'mission_'.Str::uuid()->toString(),
-            'title' => $attributes['title'],
-            'problem' => $attributes['problem'],
-            'constraints' => $attributes['constraints'],
-            'success_criteria' => $attributes['success_criteria'],
-            'decisions' => $attributes['decisions'] ?? [],
-            'risks' => $attributes['risks'] ?? [],
-            'blueprints' => $attributes['blueprints'] ?? [],
-            'tasks' => $attributes['tasks'] ?? [],
-            'snapshots' => $attributes['snapshots'] ?? [],
+            'id' => $attributes['id'] ?? uniqid('mission_'),
+            'title' => $attributes['title'] ?? '',
+            'problem' => $attributes['problem'] ?? '',
+            'constraints' => $attributes['constraints'] ?? $attributes['constraint'] ?? '',
+            'success_criteria' => $attributes['success_criteria'] ?? $attributes['success'] ?? '',
+            'decisions' => is_array($attributes['decisions'] ?? null) ? $attributes['decisions'] : [],
+            'risks' => is_array($attributes['risks'] ?? null) ? $attributes['risks'] : [],
+            'blueprints' => is_array($attributes['blueprints'] ?? null) ? $attributes['blueprints'] : [],
+            'tasks' => is_array($attributes['tasks'] ?? null) ? $attributes['tasks'] : [],
+            'snapshots' => is_array($attributes['snapshots'] ?? null) ? $attributes['snapshots'] : [],
             'created_at' => $now,
             'updated_at' => $now,
         ]);
