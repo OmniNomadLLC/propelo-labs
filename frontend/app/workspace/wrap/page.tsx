@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { SectionBlock } from "@/app/ui/primitives";
-import { wrapUpData } from "../demo-data";
+import { useProject, type ProjectContextValue } from "../project-context";
 
-type SnapshotKey = keyof typeof wrapUpData.snapshot;
+type SnapshotKey = keyof ProjectContextValue["wrapSnapshot"]["snapshot"];
 
 const snapshotStructure: {
   label: string;
@@ -20,12 +20,13 @@ const snapshotStructure: {
 ];
 
 export default function WrapScreen() {
+  const { wrapSnapshot, generateSnapshot } = useProject();
   const [copied, setCopied] = useState(false);
 
   const copySnapshot = async () => {
     const snapshotText = snapshotStructure
       .map((section) => {
-        const value = wrapUpData.snapshot[section.key];
+        const value = wrapSnapshot.snapshot[section.key];
         if (Array.isArray(value)) {
           return `${section.label}:\n- ${value.join("\n- ")}`;
         }
@@ -55,11 +56,17 @@ export default function WrapScreen() {
           Capture what shifted, what is locked, and what happens next before the
           project leaves Architect mode.
         </p>
+        <button
+          onClick={generateSnapshot}
+          className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white hover:border-white"
+        >
+          Generate snapshot
+        </button>
       </header>
 
       <SectionBlock eyebrow="Session summary" className="tier-one p-6">
         <p className="mt-3 text-lg leading-relaxed text-slate-100">
-          {wrapUpData.sessionSummary}
+          {wrapSnapshot.sessionSummary}
         </p>
       </SectionBlock>
 
@@ -70,7 +77,7 @@ export default function WrapScreen() {
           eyebrowClassName="text-xs uppercase tracking-[0.4em] text-emerald-200"
         >
           <ul className="mt-3 space-y-2 text-sm text-emerald-50">
-            {wrapUpData.proofPoints.map((point) => (
+            {wrapSnapshot.proofPoints.map((point) => (
               <li key={point} className="rounded-xl bg-black/10 px-3 py-2">
                 {point}
               </li>
@@ -83,7 +90,7 @@ export default function WrapScreen() {
           eyebrowClassName="text-xs uppercase tracking-[0.4em] text-amber-200"
         >
           <ul className="mt-3 space-y-2 text-sm text-amber-50">
-            {wrapUpData.risks.map((risk) => (
+            {wrapSnapshot.risks.map((risk) => (
               <li key={risk} className="rounded-xl bg-black/10 px-3 py-2">
                 {risk}
               </li>
@@ -96,7 +103,7 @@ export default function WrapScreen() {
           eyebrowClassName="text-xs uppercase tracking-[0.4em] text-slate-200"
         >
           <ul className="mt-3 space-y-2 text-sm text-slate-100">
-            {wrapUpData.nextSteps.map((step) => (
+            {wrapSnapshot.nextSteps.map((step) => (
               <li key={step} className="rounded-xl bg-black/20 px-3 py-2">
                 {step}
               </li>
@@ -128,7 +135,7 @@ export default function WrapScreen() {
         </div>
         <div className="mt-4 space-y-4 rounded-2xl border border-white/20 bg-white/80 p-5 text-slate-900 shadow-inner">
           {snapshotStructure.map((section) => {
-            const value = wrapUpData.snapshot[section.key];
+            const value = wrapSnapshot.snapshot[section.key];
             return (
               <div key={section.label}>
                 <p className="text-xs uppercase tracking-[0.3em] text-slate-500">

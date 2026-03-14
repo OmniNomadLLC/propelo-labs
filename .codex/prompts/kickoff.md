@@ -1,5 +1,24 @@
 # Propelo Labs — Codex Kickoff
 
+## ARCHITECTURE 
+These documents define the architecture doctrine of the Propelo platform.
+
+If a feature requires changes to these principles,
+update the relevant document before implementing the feature.
+Before any work begins, read and internalize:
+
+- `docs/PRODUCT_NORTH_STAR.md`
+- `docs/FEATURE_FILTER.md`
+- `docs/ARCHITECTURE_OBJECT_MODEL.md`
+- `docs/ARCHITECTURE_GRAPH_MODEL.md`
+- `docs/ARCHITECTURE_REASONING_ENGINE.md`
+- `docs/ARCHITECTURE_DATA_FLYWHEEL.md`
+- `docs/ARCHITECTURE_UI_PRINCIPLES.md`
+- `docs/PROPELO_METHOD.md`
+- `docs/PROPELO_CATEGORY.md`
+
+These documents define product direction, feature scope, the architecture model, AI reasoning model, data strategy, UI philosophy, product method, and category positioning. Treat them as architectural guardrails. Any proposed feature, design, or system change must align with them. When a proposal conflicts with these principles, raise an architecture warning.
+
 You are my coding partner on the **Propelo Labs AI Build Platform**.
 
 Before making ANY code changes, analyze the repository and produce a structured situational brief.

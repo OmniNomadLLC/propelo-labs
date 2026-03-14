@@ -198,6 +198,24 @@ data structures
 
 Explain it briefly.
 
+Architecture Alignment
+
+- Confirm whether today's work aligned with:
+  - `docs/PRODUCT_NORTH_STAR.md`
+  - `docs/FEATURE_FILTER.md`
+  - `docs/ARCHITECTURE_OBJECT_MODEL.md`
+  - `docs/ARCHITECTURE_GRAPH_MODEL.md`
+  - `docs/ARCHITECTURE_REASONING_ENGINE.md`
+  - `docs/ARCHITECTURE_DATA_FLYWHEEL.md`
+  - `docs/ARCHITECTURE_UI_PRINCIPLES.md`
+  - `docs/PROPELO_METHOD.md`
+  - `docs/PROPELO_CATEGORY.md`
+- Briefly mention if the session reinforced architecture principles, introduced new decisions, or requires updating architecture documentation.
+
+---
+
+After completing the wrap-up and doc updates, finish with a clearly documented git commit that captures the session’s changes.
+
 If not, explicitly state:
 
 No structural architecture changes.

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, type ComponentType, type SVGProps } from "react";
-import { SectionBlock } from "@/app/ui/primitives";
-import { brainData } from "../demo-data";
+import { SectionBlock, StatusChip } from "@/app/ui/primitives";
+import { useProject, type ConfidenceLevel } from "../project-context";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -39,26 +39,54 @@ const IconDial: ComponentType<IconProps> = ({ className = iconBase, ...props }) 
   </svg>
 );
 
-const signalMetrics = [
-  {
-    label: "Decisions locked",
-    value: brainData.decisions.length,
-    detail: "+3 this session",
-  },
-  {
-    label: "Working assumptions",
-    value: brainData.assumptions.length,
-    detail: "2 pending validation",
-  },
-  {
-    label: "Risks tracked",
-    value: brainData.risks.length,
-    detail: "Mitigate before Build",
-  },
-];
-
 export default function BrainScreen() {
+  const { brainWorkflows, addDecision, addRisk } = useProject();
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
+  const [showDecisionForm, setShowDecisionForm] = useState(false);
+  const [decisionText, setDecisionText] = useState("");
+  const [decisionConfidence, setDecisionConfidence] = useState<ConfidenceLevel>("medium");
+  const [showRiskForm, setShowRiskForm] = useState(false);
+  const [riskDescription, setRiskDescription] = useState("");
+  const [riskImpact, setRiskImpact] = useState<ConfidenceLevel>("medium");
+  const [riskLikelihood, setRiskLikelihood] = useState<ConfidenceLevel>("medium");
+  const handleDecisionSubmit = () => {
+    if (!decisionText.trim()) return;
+    addDecision({ text: decisionText, confidence: decisionConfidence });
+    setDecisionText("");
+    setDecisionConfidence("medium");
+    setShowDecisionForm(false);
+  };
+
+  const handleRiskSubmit = () => {
+    if (!riskDescription.trim()) return;
+    addRisk({
+      description: riskDescription,
+      impact: riskImpact,
+      likelihood: riskLikelihood,
+    });
+    setRiskDescription("");
+    setRiskImpact("medium");
+    setRiskLikelihood("medium");
+    setShowRiskForm(false);
+  };
+
+  const signalMetrics = [
+    {
+      label: "Decisions locked",
+      value: brainWorkflows.decisions.length,
+      detail: "+3 this session",
+    },
+    {
+      label: "Working assumptions",
+      value: brainWorkflows.assumptions.length,
+      detail: "2 pending validation",
+    },
+    {
+      label: "Risks tracked",
+      value: brainWorkflows.risks.length,
+      detail: "Mitigate before Build",
+    },
+  ];
 
   return (
     <div className="space-y-10">
@@ -77,13 +105,68 @@ export default function BrainScreen() {
           eyebrow="Decisions locked in"
           className="tier-three p-5 text-sm"
         >
-          <ul className="mt-3 space-y-2 text-slate-100">
-            {brainData.decisions.map((item) => (
-              <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
-                {item}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowDecisionForm((prev) => !prev)}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-100 hover:border-white"
+            >
+              + Add decision
+            </button>
+          </div>
+          {showDecisionForm && (
+            <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 p-4">
+              <textarea
+                value={decisionText}
+                onChange={(event) => setDecisionText(event.target.value)}
+                placeholder="Decision detail"
+                className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-100 focus:border-sky-400/60 focus:outline-none"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+                <label className="text-slate-400">
+                  Confidence
+                  <select
+                    value={decisionConfidence}
+                    onChange={(event) =>
+                      setDecisionConfidence(event.target.value as ConfidenceLevel)
+                    }
+                    className="ml-2 rounded-full border border-white/20 bg-slate-900 px-3 py-1 text-slate-100"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+                <button
+                  onClick={handleDecisionSubmit}
+                  className="rounded-full bg-white px-4 py-1 text-xs font-semibold text-slate-900"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
+          <ul className="mt-4 space-y-2 text-slate-100">
+            {brainWorkflows.decisions.map((item) => (
+              <li key={item.id} className="rounded-xl bg-black/20 px-3 py-2">
+                <p>{item.text}</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Confidence: <span className="font-semibold">{item.confidence}</span>
+                </p>
               </li>
             ))}
           </ul>
+          <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Impact</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-300">
+              <li>
+                Anchors {brainWorkflows.decisions.length} blueprint checkpoints before Scope moves forward.
+              </li>
+              <li>Promotes new guardrails into Tasks when delivery modes change.</li>
+              <li>
+                Links {brainWorkflows.risks.length} tracked risks so QA sees what stays under watch.
+              </li>
+            </ul>
+          </div>
         </SectionBlock>
         <div className="tier-two flex flex-col gap-5 rounded-3xl p-6 text-sm text-slate-200">
           <div className="flex items-center justify-between">
@@ -133,7 +216,7 @@ export default function BrainScreen() {
           className="tier-three p-5 text-sm"
         >
           <ul className="mt-3 space-y-2 text-slate-100">
-            {brainData.assumptions.map((item) => (
+            {brainWorkflows.assumptions.map((item) => (
               <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
                 {item}
               </li>
@@ -145,10 +228,66 @@ export default function BrainScreen() {
           className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 text-sm"
           eyebrowClassName="text-xs uppercase tracking-[0.4em] text-rose-200"
         >
-          <ul className="mt-3 space-y-2 text-rose-50">
-            {brainData.risks.map((item) => (
-              <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
-                {item}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowRiskForm((prev) => !prev)}
+              className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-rose-50 hover:border-white/60"
+            >
+              + Add risk
+            </button>
+          </div>
+          {showRiskForm && (
+            <div className="mt-3 rounded-2xl border border-rose-400/40 bg-black/30 p-4">
+              <textarea
+                value={riskDescription}
+                onChange={(event) => setRiskDescription(event.target.value)}
+                placeholder="Risk description"
+                className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-100 focus:border-rose-400/60 focus:outline-none"
+              />
+              <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                <label className="text-rose-100">
+                  Impact
+                  <select
+                    value={riskImpact}
+                    onChange={(event) => setRiskImpact(event.target.value as ConfidenceLevel)}
+                    className="ml-2 rounded-full border border-white/20 bg-slate-900 px-3 py-1 text-slate-100"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+                <label className="text-rose-100">
+                  Likelihood
+                  <select
+                    value={riskLikelihood}
+                    onChange={(event) =>
+                      setRiskLikelihood(event.target.value as ConfidenceLevel)
+                    }
+                    className="ml-2 rounded-full border border-white/20 bg-slate-900 px-3 py-1 text-slate-100"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </label>
+                <button
+                  onClick={handleRiskSubmit}
+                  className="rounded-full bg-white px-4 py-1 text-xs font-semibold text-slate-900"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
+          <ul className="mt-4 space-y-2 text-rose-50">
+            {brainWorkflows.risks.map((item) => (
+              <li key={item.id} className="rounded-xl bg-black/20 px-3 py-2">
+                <p>{item.description}</p>
+                <div className="mt-1 flex flex-wrap gap-2 text-xs text-rose-100">
+                  <StatusChip label={`Impact: ${item.impact}`} variant="outline" className="border-rose-200/40 text-rose-50" />
+                  <StatusChip label={`Likelihood: ${item.likelihood}`} variant="outline" className="border-rose-200/40 text-rose-50" />
+                </div>
               </li>
             ))}
           </ul>
@@ -160,7 +299,7 @@ export default function BrainScreen() {
         className="tier-three p-5 text-sm text-slate-300"
       >
         <div className="mt-4 space-y-3">
-          {brainData.openQuestions.map((question) => {
+          {brainWorkflows.openQuestions.map((question) => {
             const isOpen = expandedQuestion === question;
             return (
               <button

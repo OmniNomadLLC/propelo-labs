@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { intakeData, projectSummary } from "../demo-data";
 import { SectionBlock } from "@/app/ui/primitives";
+import { useProject } from "../project-context";
 
 const promptDetails: Record<string, string> = {
   "Clarify tone for SMS vs email sequences":
@@ -16,8 +16,9 @@ const promptDetails: Record<string, string> = {
 };
 
 export default function IntakeScreen() {
+  const { intakeAnswers, projectSummary } = useProject();
   const [activePrompt, setActivePrompt] = useState(
-    intakeData.guidance.prompts[0],
+    intakeAnswers.guidance.prompts[0],
   );
   const [completedActions, setCompletedActions] = useState<string[]>([]);
 
@@ -56,7 +57,7 @@ export default function IntakeScreen() {
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
               Mission in progress
             </p>
-            <p className="mt-3 text-lg text-slate-100">{intakeData.mission}</p>
+            <p className="mt-3 text-lg text-slate-100">{intakeAnswers.mission}</p>
           </div>
           <div className="tier-three p-4 text-sm text-slate-200 md:w-72">
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
@@ -72,7 +73,7 @@ export default function IntakeScreen() {
 
       <div className="tier-two p-6">
         <div className="flex flex-wrap gap-3">
-          {intakeData.guidance.prompts.map((prompt) => (
+          {intakeAnswers.guidance.prompts.map((prompt) => (
             <button
               key={prompt}
               onClick={() => setActivePrompt(prompt)}
@@ -92,44 +93,44 @@ export default function IntakeScreen() {
           </p>
           <p className="mt-2 text-base text-white">{activePrompt}</p>
           <p className="mt-3 text-slate-300">{promptDetails[activePrompt]}</p>
-        </div>
       </div>
+    </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <SectionBlock eyebrow="Success signals" className="tier-three p-5">
-          <ul className="mt-3 space-y-2 text-sm text-slate-100">
-            {intakeData.successSignals.map((item) => (
-              <li
-                key={item}
-                className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-        </SectionBlock>
-        <SectionBlock eyebrow="Constraints" className="tier-three p-5">
-          <ul className="mt-3 space-y-2 text-sm text-slate-100">
-            {intakeData.constraints.map((item) => (
-              <li
-                key={item}
-                className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
-        </SectionBlock>
-      </div>
-
-      <SectionBlock eyebrow="Working assumptions" className="tier-three p-5">
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {intakeData.assumptions.map((assumption) => (
-            <div key={assumption} className="rounded-xl bg-white/5 p-4 text-sm text-slate-200">
-              {assumption}
-            </div>
+    <div className="grid gap-4 md:grid-cols-2">
+      <SectionBlock eyebrow="Success signals" className="tier-three p-5">
+        <ul className="mt-3 space-y-2 text-sm text-slate-100">
+          {intakeAnswers.successSignals.map((item) => (
+            <li
+              key={item}
+              className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
+            >
+              {item}
+            </li>
           ))}
-        </div>
+        </ul>
+      </SectionBlock>
+      <SectionBlock eyebrow="Constraints" className="tier-three p-5">
+        <ul className="mt-3 space-y-2 text-sm text-slate-100">
+          {intakeAnswers.constraints.map((item) => (
+            <li
+              key={item}
+              className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      </SectionBlock>
+    </div>
+
+    <SectionBlock eyebrow="Working assumptions" className="tier-three p-5">
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {intakeAnswers.assumptions.map((assumption) => (
+          <div key={assumption} className="rounded-xl bg-white/5 p-4 text-sm text-slate-200">
+            {assumption}
+          </div>
+        ))}
+      </div>
         <p className="mt-4 text-sm text-slate-400">
           Anything uncertain belongs here. Promote items into the Project Brain
           when validated.
@@ -138,7 +139,7 @@ export default function IntakeScreen() {
 
       <SectionBlock eyebrow="Intake actions to lock" className="tier-three p-5">
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {intakeData.guidance.nextActions.map((action) => {
+          {intakeAnswers.guidance.nextActions.map((action) => {
             const isDone = completedActions.includes(action);
             return (
               <button

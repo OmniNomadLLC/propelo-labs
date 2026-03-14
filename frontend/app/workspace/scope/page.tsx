@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { SectionBlock } from "@/app/ui/primitives";
-import { scopeBlueprint } from "../demo-data";
+import { useProject } from "../project-context";
 
 export default function ScopeScreen() {
+  const { scopeBlueprint } = useProject();
   const [selectedPath, setSelectedPath] = useState(
     scopeBlueprint.overview.implementationPath[0],
   );
