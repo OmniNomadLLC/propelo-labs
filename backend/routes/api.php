@@ -6,6 +6,8 @@ use App\Http\Controllers\DecisionController;
 use App\Http\Controllers\RiskController;
 use App\Http\Controllers\MitigationController;
 use App\Http\Controllers\BlueprintController;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\SnapshotController;
 
 Route::prefix('missions')->group(function () {
     Route::get('/', [MissionController::class, 'index']);
@@ -44,4 +46,18 @@ Route::prefix('blueprints')->group(function () {
     Route::post('/', [BlueprintController::class, 'store']);
     Route::put('{id}', [BlueprintController::class, 'update']);
     Route::delete('{id}', [BlueprintController::class, 'destroy']);
+    Route::get('{id}/tasks', [TaskController::class, 'forBlueprint']);
+});
+
+Route::prefix('tasks')->group(function () {
+    Route::get('/', [TaskController::class, 'index']);
+    Route::post('/', [TaskController::class, 'store']);
+    Route::get('{id}', [TaskController::class, 'show']);
+    Route::put('{id}', [TaskController::class, 'update']);
+});
+
+Route::prefix('snapshots')->group(function () {
+    Route::get('/', [SnapshotController::class, 'index']);
+    Route::post('/', [SnapshotController::class, 'store']);
+    Route::get('{id}', [SnapshotController::class, 'show']);
 });

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Risk;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Carbon;
+use App\Services\DecisionStore;
 
 class RiskStore
 {
@@ -43,6 +44,21 @@ class RiskStore
     public static function forDecision(string $decisionId): array
     {
         return array_values(array_filter(self::all(), fn ($risk) => $risk['decision_id'] === $decisionId));
+    }
+
+    public static function forMission(string $missionId): array
+    {
+        $decisions = DecisionStore::forMission($missionId);
+        $decisionIds = array_map(fn ($decision) => $decision['id'], $decisions);
+        if (! $decisionIds) {
+            return [];
+        }
+
+        $decisionMap = array_flip($decisionIds);
+
+        return array_values(array_filter(self::all(), function ($risk) use ($decisionMap) {
+            return isset($decisionMap[$risk['decision_id']]);
+        }));
     }
 
     public static function find(string $id): ?Risk

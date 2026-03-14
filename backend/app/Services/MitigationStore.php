@@ -46,6 +46,20 @@ class MitigationStore
         return array_values(array_filter(self::all(), fn ($mitigation) => $mitigation['risk_id'] === $riskId));
     }
 
+    public static function forMission(string $missionId): array
+    {
+        $risks = RiskStore::forMission($missionId);
+        $riskIds = array_map(fn ($risk) => $risk['id'], $risks);
+        if (! $riskIds) {
+            return [];
+        }
+        $riskMap = array_flip($riskIds);
+
+        return array_values(array_filter(self::all(), function ($mitigation) use ($riskMap) {
+            return isset($riskMap[$mitigation['risk_id']]);
+        }));
+    }
+
     public static function find(string $id): ?Mitigation
     {
         self::ensureDirectory();
