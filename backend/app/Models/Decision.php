@@ -7,6 +7,10 @@ class Decision
     public string $id;
     public string $mission_id;
     public string $title;
+    public string $description;
+    public array $alternatives;
+    public string $chosen;
+    public string $rationale;
     public string $reasoning;
     public float $confidence;
     public string $impact;
@@ -16,15 +20,28 @@ class Decision
 
     public function __construct(array $attributes)
     {
-        $defaults = ['risks' => []];
+        $defaults = [
+            'description' => '',
+            'alternatives' => [],
+            'chosen' => '',
+            'rationale' => '',
+            'reasoning' => '',
+            'confidence' => 0,
+            'impact' => '',
+            'risks' => [],
+        ];
         $merged = array_merge($defaults, $attributes);
 
         $this->id = $merged['id'];
         $this->mission_id = $merged['mission_id'];
         $this->title = $merged['title'];
-        $this->reasoning = $merged['reasoning'];
+        $this->description = $merged['description'];
+        $this->alternatives = $merged['alternatives'];
+        $this->chosen = $merged['chosen'];
+        $this->rationale = $merged['rationale'];
+        $this->reasoning = $merged['reasoning'] ?: $this->rationale ?: $this->description;
         $this->confidence = (float) $merged['confidence'];
-        $this->impact = $merged['impact'];
+        $this->impact = $merged['impact'] ?: $this->chosen;
         $this->risks = $merged['risks'];
         $this->created_at = $merged['created_at'];
         $this->updated_at = $merged['updated_at'];
@@ -36,6 +53,10 @@ class Decision
             'id' => $this->id,
             'mission_id' => $this->mission_id,
             'title' => $this->title,
+            'description' => $this->description,
+            'alternatives' => $this->alternatives,
+            'chosen' => $this->chosen,
+            'rationale' => $this->rationale,
             'reasoning' => $this->reasoning,
             'confidence' => $this->confidence,
             'impact' => $this->impact,

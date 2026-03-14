@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Decision;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
 class DecisionStore
@@ -61,17 +60,7 @@ class DecisionStore
     public static function create(array $attributes): Decision
     {
         $now = Carbon::now()->toISOString();
-        $decision = new Decision([
-            'id' => $attributes['id'] ?? 'decision_'.Str::uuid()->toString(),
-            'mission_id' => $attributes['mission_id'],
-            'title' => $attributes['title'],
-            'reasoning' => $attributes['reasoning'],
-            'confidence' => (float) $attributes['confidence'],
-            'impact' => $attributes['impact'],
-            'risks' => $attributes['risks'] ?? [],
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $decision = new Decision(self::buildPayload($attributes, $now));
 
         self::store($decision);
 
@@ -80,17 +69,14 @@ class DecisionStore
 
     public static function update(Decision $decision, array $attributes): Decision
     {
-        $decision = new Decision([
+        $payload = array_merge($decision->toArray(), $attributes, [
             'id' => $decision->id,
             'mission_id' => $decision->mission_id,
-            'title' => $attributes['title'] ?? $decision->title,
-            'reasoning' => $attributes['reasoning'] ?? $decision->reasoning,
-            'confidence' => array_key_exists('confidence', $attributes) ? (float) $attributes['confidence'] : $decision->confidence,
-            'impact' => $attributes['impact'] ?? $decision->impact,
-            'risks' => $decision->risks,
             'created_at' => $decision->created_at,
             'updated_at' => Carbon::now()->toISOString(),
         ]);
+
+        $decision = new Decision(self::buildPayload($payload, $payload['updated_at']));
 
         self::store($decision);
 
@@ -104,17 +90,15 @@ class DecisionStore
             $risks[] = $riskId;
         }
 
-        $updated = new Decision([
+        $payload = array_merge($decision->toArray(), [
+            'risks' => $risks,
             'id' => $decision->id,
             'mission_id' => $decision->mission_id,
-            'title' => $decision->title,
-            'reasoning' => $decision->reasoning,
-            'confidence' => $decision->confidence,
-            'impact' => $decision->impact,
-            'risks' => $risks,
             'created_at' => $decision->created_at,
             'updated_at' => Carbon::now()->toISOString(),
         ]);
+
+        $updated = new Decision(self::buildPayload($payload, $payload['updated_at']));
 
         self::store($updated);
     }
@@ -123,5 +107,29 @@ class DecisionStore
     {
         self::ensureDirectory();
         File::put(self::pathFor($decision->id), json_encode($decision->toArray(), JSON_PRETTY_PRINT));
+    }
+
+    protected static function buildPayload(array $attributes, string $timestamp): array
+    {
+        $alternatives = $attributes['alternatives'] ?? [];
+        if (! is_array($alternatives)) {
+            $alternatives = [];
+        }
+
+        return [
+            'id' => $attributes['id'] ?? uniqid('decision_'),
+            'mission_id' => $attributes['mission_id'],
+            'title' => $attributes['title'] ?? '',
+            'description' => $attributes['description'] ?? '',
+            'alternatives' => $alternatives,
+            'chosen' => $attributes['chosen'] ?? '',
+            'rationale' => $attributes['rationale'] ?? '',
+            'reasoning' => $attributes['reasoning'] ?? ($attributes['rationale'] ?? $attributes['description'] ?? ''),
+            'confidence' => isset($attributes['confidence']) ? (float) $attributes['confidence'] : 0,
+            'impact' => $attributes['impact'] ?? ($attributes['chosen'] ?? ''),
+            'risks' => is_array($attributes['risks'] ?? null) ? $attributes['risks'] : [],
+            'created_at' => $attributes['created_at'] ?? $timestamp,
+            'updated_at' => $timestamp,
+        ];
     }
 }

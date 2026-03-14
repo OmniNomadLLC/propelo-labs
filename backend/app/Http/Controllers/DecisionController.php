@@ -40,21 +40,28 @@ class DecisionController extends Controller
         return response()->json($decision->toArray());
     }
 
-    /**
-     * @throws ValidationException
-     */
     public function store(Request $request): JsonResponse
     {
-        $data = $this->validateDecision($request);
-        $mission = MissionStore::find($data['mission_id']);
-        if (! $mission) {
-            return response()->json(['message' => 'Mission not found'], 404);
+        $payload = $request->all();
+        $missionId = $payload['mission_id'] ?? null;
+        if (! is_string($missionId) || $missionId === '') {
+            return response()->json(['error' => 'mission_id_required'], 422);
         }
 
-        $decision = DecisionStore::create($data);
+        $mission = MissionStore::find($missionId);
+        if (! $mission) {
+            return response()->json(['error' => 'mission_not_found'], 404);
+        }
+
+        $payload['mission_id'] = $missionId;
+        $decision = DecisionStore::create($payload);
         MissionStore::addDecisionReference($decision->mission_id, $decision->id);
 
-        return response()->json($decision->toArray(), 201);
+        return response()->json([
+            'id' => $decision->id,
+            'mission_id' => $decision->mission_id,
+            'title' => $decision->title,
+        ], 201);
     }
 
     /**
@@ -81,9 +88,14 @@ class DecisionController extends Controller
         $rules = [
             'mission_id' => [$partial ? 'sometimes' : 'required', 'string'],
             'title' => [$partial ? 'sometimes' : 'required', 'string', 'max:200'],
-            'reasoning' => [$partial ? 'sometimes' : 'required', 'string'],
-            'confidence' => [$partial ? 'sometimes' : 'required', 'numeric', 'between:0,1'],
-            'impact' => [$partial ? 'sometimes' : 'required', 'string', 'max:100'],
+            'description' => [$partial ? 'sometimes' : 'required', 'string'],
+            'alternatives' => ['sometimes', 'array'],
+            'alternatives.*' => ['string'],
+            'chosen' => ['sometimes', 'string'],
+            'rationale' => ['sometimes', 'string'],
+            'reasoning' => ['sometimes', 'string'],
+            'confidence' => ['sometimes', 'numeric'],
+            'impact' => ['sometimes', 'string'],
         ];
 
         return $this->validate($request, $rules);
