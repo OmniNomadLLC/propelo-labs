@@ -1,337 +1,777 @@
 "use client";
 
-import { useState, type ComponentType, type SVGProps } from "react";
-import { SectionBlock, StatusChip } from "@/app/ui/primitives";
-import { useProject, type ConfidenceLevel } from "../project-context";
+import { useEffect, useState } from "react";
+import { MissionCard, MissionCreatePanel, type Mission, type MissionFields } from "./MissionCard";
+import {
+  DecisionCard,
+  DecisionCreatePanel,
+  type Decision,
+  type DecisionFields,
+} from "./DecisionCard";
+import {
+  RiskCard,
+  RiskCreatePanel,
+  type Risk,
+  type RiskFields,
+} from "./RiskCard";
+import {
+  MitigationCard,
+  MitigationCreatePanel,
+  type Mitigation,
+  type MitigationFields,
+} from "./MitigationCard";
 
-type IconProps = SVGProps<SVGSVGElement>;
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
-const iconBase = "h-5 w-5";
+export default function MissionWorkspacePage() {
+  const [mission, setMission] = useState<Mission | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
-const IconPulse: ComponentType<IconProps> = ({ className = iconBase, ...props }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.6}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={`${className} text-emerald-300`}
-    {...props}
-  >
-    <path d="M2 12h4l2 6 4-16 2 10h6" />
-  </svg>
-);
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [decisionRisks, setDecisionRisks] = useState<Record<string, Risk[]>>({});
+  const [riskMitigations, setRiskMitigations] = useState<Record<string, Mitigation[]>>({});
+  const [decisionsLoading, setDecisionsLoading] = useState(false);
+  const [decisionsError, setDecisionsError] = useState<string | null>(null);
+  const [decisionSavingId, setDecisionSavingId] = useState<string | null>(null);
+  const [showDecisionCreate, setShowDecisionCreate] = useState(false);
+  const [isDecisionEditing, setIsDecisionEditing] = useState(false);
 
-const IconDial: ComponentType<IconProps> = ({ className = iconBase, ...props }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.6}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={`${className} text-cyan-300`}
-    {...props}
-  >
-    <circle cx={12} cy={12} r={9} />
-    <path d="M12 7v5l3 3" />
-  </svg>
-);
+  const [activeRiskCreate, setActiveRiskCreate] = useState<string | null>(null);
+  const [riskSavingId, setRiskSavingId] = useState<string | null>(null);
+  const [isRiskEditing, setIsRiskEditing] = useState(false);
+  const [activeMitigationCreate, setActiveMitigationCreate] = useState<string | null>(null);
+  const [mitigationSavingId, setMitigationSavingId] = useState<string | null>(null);
+  const [isMitigationEditing, setIsMitigationEditing] = useState(false);
 
-export default function BrainScreen() {
-  const { brainWorkflows, addDecision, addRisk } = useProject();
-  const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
-  const [showDecisionForm, setShowDecisionForm] = useState(false);
-  const [decisionText, setDecisionText] = useState("");
-  const [decisionConfidence, setDecisionConfidence] = useState<ConfidenceLevel>("medium");
-  const [showRiskForm, setShowRiskForm] = useState(false);
-  const [riskDescription, setRiskDescription] = useState("");
-  const [riskImpact, setRiskImpact] = useState<ConfidenceLevel>("medium");
-  const [riskLikelihood, setRiskLikelihood] = useState<ConfidenceLevel>("medium");
-  const handleDecisionSubmit = () => {
-    if (!decisionText.trim()) return;
-    addDecision({ text: decisionText, confidence: decisionConfidence });
-    setDecisionText("");
-    setDecisionConfidence("medium");
-    setShowDecisionForm(false);
+  useEffect(() => {
+    void loadMission();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadMission = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_BASE}/api/missions`, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Unable to load mission");
+      }
+      const missions: Mission[] = await response.json();
+      setMission(missions[0] ?? null);
+      if (missions[0]) {
+        await loadDecisions(missions[0].id);
+      } else {
+        setDecisions([]);
+        setDecisionRisks({});
+        setRiskMitigations({});
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load mission");
+      setMission(null);
+      setDecisions([]);
+      setDecisionRisks({});
+      setRiskMitigations({});
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRiskSubmit = () => {
-    if (!riskDescription.trim()) return;
-    addRisk({
-      description: riskDescription,
-      impact: riskImpact,
-      likelihood: riskLikelihood,
-    });
-    setRiskDescription("");
-    setRiskImpact("medium");
-    setRiskLikelihood("medium");
-    setShowRiskForm(false);
+  const loadDecisions = async (missionId: string) => {
+    try {
+      setDecisionsLoading(true);
+      setDecisionsError(null);
+      const response = await fetch(`${API_BASE}/api/missions/${missionId}/decisions`, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error("Unable to load decisions");
+      }
+      const data: Decision[] = await response.json();
+      const risksMap: Record<string, Risk[]> = {};
+      const mitigationsMap: Record<string, Mitigation[]> = {};
+      await Promise.all(
+        data.map(async (decision) => {
+          const risks = await fetchRisks(decision.id);
+          risksMap[decision.id] = risks;
+          await Promise.all(
+            risks.map(async (risk) => {
+              mitigationsMap[risk.id] = await fetchMitigations(risk.id);
+            }),
+          );
+        }),
+      );
+      setDecisions(data);
+      setDecisionRisks(risksMap);
+      setRiskMitigations(mitigationsMap);
+    } catch (err) {
+      setDecisionsError(err instanceof Error ? err.message : "Unable to load decisions");
+      setDecisions([]);
+      setDecisionRisks({});
+      setRiskMitigations({});
+    } finally {
+      setDecisionsLoading(false);
+    }
   };
 
-  const signalMetrics = [
-    {
-      label: "Decisions locked",
-      value: brainWorkflows.decisions.length,
-      detail: "+3 this session",
-    },
-    {
-      label: "Working assumptions",
-      value: brainWorkflows.assumptions.length,
-      detail: "2 pending validation",
-    },
-    {
-      label: "Risks tracked",
-      value: brainWorkflows.risks.length,
-      detail: "Mitigate before Build",
-    },
-  ];
+  const fetchRisks = async (decisionId: string): Promise<Risk[]> => {
+    const response = await fetch(`${API_BASE}/api/decisions/${decisionId}/risks`, { cache: "no-store" });
+    if (!response.ok) {
+      return [];
+    }
+    return (await response.json()) as Risk[];
+  };
+
+  const refreshDecisionRisks = async (decisionId: string) => {
+    const risks = await fetchRisks(decisionId);
+    setDecisionRisks((prev) => ({ ...prev, [decisionId]: risks }));
+    const mitigationsMap: Record<string, Mitigation[]> = { ...riskMitigations };
+    await Promise.all(
+      risks.map(async (risk) => {
+        mitigationsMap[risk.id] = await fetchMitigations(risk.id);
+      }),
+    );
+    setRiskMitigations(mitigationsMap);
+  };
+
+  const fetchMitigations = async (riskId: string): Promise<Mitigation[]> => {
+    const response = await fetch(`${API_BASE}/api/risks/${riskId}/mitigations`, { cache: "no-store" });
+    if (!response.ok) {
+      return [];
+    }
+    return (await response.json()) as Mitigation[];
+  };
+
+  const refreshRiskMitigations = async (riskId: string) => {
+    const mitigations = await fetchMitigations(riskId);
+    setRiskMitigations((prev) => ({ ...prev, [riskId]: mitigations }));
+  };
+
+  const saveMission = async (fields: MissionFields) => {
+    if (!mission) return;
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/missions/${mission.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to update mission");
+      }
+      const updated: Mission = await response.json();
+      setMission(updated);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const createMission = async (fields: MissionFields) => {
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/missions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create mission");
+      }
+      const created: Mission = await response.json();
+      setMission(created);
+      setShowCreateForm(false);
+      await loadDecisions(created.id);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const createDecision = async (fields: DecisionFields) => {
+    if (!mission) return;
+    setDecisionSavingId("new");
+    try {
+      const response = await fetch(`${API_BASE}/api/decisions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...fields, mission_id: mission.id }),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create decision");
+      }
+      await loadDecisions(mission.id);
+      setShowDecisionCreate(false);
+      setIsDecisionEditing(false);
+    } finally {
+      setDecisionSavingId(null);
+    }
+  };
+
+  const updateDecision = async (id: string, fields: DecisionFields) => {
+    setDecisionSavingId(id);
+    try {
+      const response = await fetch(`${API_BASE}/api/decisions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to update decision");
+      }
+      if (mission) {
+        await loadDecisions(mission.id);
+      }
+    } finally {
+      setDecisionSavingId(null);
+    }
+  };
+
+  const createRisk = async (decisionId: string, fields: RiskFields) => {
+    setRiskSavingId(`new-${decisionId}`);
+    try {
+      const response = await fetch(`${API_BASE}/api/risks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...fields, decision_id: decisionId }),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create risk");
+      }
+      await refreshDecisionRisks(decisionId);
+      setActiveRiskCreate(null);
+      setIsRiskEditing(false);
+    } finally {
+      setRiskSavingId(null);
+    }
+  };
+
+  const updateRisk = async (riskId: string, decisionId: string, fields: RiskFields) => {
+    setRiskSavingId(riskId);
+    try {
+      const response = await fetch(`${API_BASE}/api/risks/${riskId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to update risk");
+      }
+      await refreshDecisionRisks(decisionId);
+    } finally {
+      setRiskSavingId(null);
+    }
+  };
+
+  const createMitigation = async (riskId: string, fields: MitigationFields) => {
+    setMitigationSavingId(`new-${riskId}`);
+    try {
+      const response = await fetch(`${API_BASE}/api/mitigations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...fields, risk_id: riskId }),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create mitigation");
+      }
+      await refreshRiskMitigations(riskId);
+      setActiveMitigationCreate(null);
+      setIsMitigationEditing(false);
+    } finally {
+      setMitigationSavingId(null);
+    }
+  };
+
+  const updateMitigation = async (
+    mitigationId: string,
+    riskId: string,
+    fields: MitigationFields,
+  ) => {
+    setMitigationSavingId(mitigationId);
+    try {
+      const response = await fetch(`${API_BASE}/api/mitigations/${mitigationId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to update mitigation");
+      }
+      await refreshRiskMitigations(riskId);
+    } finally {
+      setMitigationSavingId(null);
+    }
+  };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-          Screen · Project Brain
-        </p>
-        <h1 className="text-3xl font-semibold text-white">Project Brain</h1>
+        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Screen · Mission Engine</p>
+        <h1 className="text-3xl font-semibold text-white">Define the mission</h1>
         <p className="text-sm text-slate-400">
-          Decisions, assumptions, and risks that keep the automation blueprint honest.
+          Capture the problem, constraints, and success signals before any architecture work begins.
         </p>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <SectionBlock
-          eyebrow="Decisions locked in"
-          className="tier-three p-5 text-sm"
-        >
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setShowDecisionForm((prev) => !prev)}
-              className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-100 hover:border-white"
-            >
-              + Add decision
-            </button>
-          </div>
-          {showDecisionForm && (
-            <div className="mt-3 rounded-2xl border border-white/10 bg-black/30 p-4">
-              <textarea
-                value={decisionText}
-                onChange={(event) => setDecisionText(event.target.value)}
-                placeholder="Decision detail"
-                className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-100 focus:border-sky-400/60 focus:outline-none"
-              />
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
-                <label className="text-slate-400">
-                  Confidence
-                  <select
-                    value={decisionConfidence}
-                    onChange={(event) =>
-                      setDecisionConfidence(event.target.value as ConfidenceLevel)
-                    }
-                    className="ml-2 rounded-full border border-white/20 bg-slate-900 px-3 py-1 text-slate-100"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </label>
-                <button
-                  onClick={handleDecisionSubmit}
-                  className="rounded-full bg-white px-4 py-1 text-xs font-semibold text-slate-900"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          )}
-          <ul className="mt-4 space-y-2 text-slate-100">
-            {brainWorkflows.decisions.map((item) => (
-              <li key={item.id} className="rounded-xl bg-black/20 px-3 py-2">
-                <p>{item.text}</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Confidence: <span className="font-semibold">{item.confidence}</span>
-                </p>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Impact</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-300">
-              <li>
-                Anchors {brainWorkflows.decisions.length} blueprint checkpoints before Scope moves forward.
-              </li>
-              <li>Promotes new guardrails into Tasks when delivery modes change.</li>
-              <li>
-                Links {brainWorkflows.risks.length} tracked risks so QA sees what stays under watch.
-              </li>
-            </ul>
-          </div>
-        </SectionBlock>
-        <div className="tier-two flex flex-col gap-5 rounded-3xl p-6 text-sm text-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Signal monitor</p>
-              <p className="text-base font-semibold text-white">Project readiness snapshot</p>
-            </div>
-            <IconPulse className="h-6 w-6" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {signalMetrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-2xl border border-white/15 bg-white/5 p-4"
-              >
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
-                  {metric.label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-white">{metric.value}</p>
-                <p className="text-xs text-slate-400">{metric.detail}</p>
-              </div>
-            ))}
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <div className="flex items-center gap-3">
-              <IconDial className="h-6 w-6" />
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                  Confidence index
-                </p>
-                <p className="text-2xl font-semibold text-white">84%</p>
-              </div>
-              <span className="ml-auto rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200">
-                Ready for Build
-              </span>
-            </div>
-            <p className="mt-3 text-xs text-slate-400">
-              All critical risks documented. Waiting on compliance review to move into Build mode.
-            </p>
-          </div>
-        </div>
-      </div>
+      <PipelineIndicator
+        activeStage={
+          isMitigationEditing ? 3 : isRiskEditing ? 2 : isDecisionEditing ? 1 : 0
+        }
+      />
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <SectionBlock
-          eyebrow="Working assumptions"
-          className="tier-three p-5 text-sm"
-        >
-          <ul className="mt-3 space-y-2 text-slate-100">
-            {brainWorkflows.assumptions.map((item) => (
-              <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </SectionBlock>
-        <SectionBlock
-          eyebrow="Risks"
-          className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 text-sm"
-          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-rose-200"
-        >
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setShowRiskForm((prev) => !prev)}
-              className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-rose-50 hover:border-white/60"
-            >
-              + Add risk
-            </button>
-          </div>
-          {showRiskForm && (
-            <div className="mt-3 rounded-2xl border border-rose-400/40 bg-black/30 p-4">
-              <textarea
-                value={riskDescription}
-                onChange={(event) => setRiskDescription(event.target.value)}
-                placeholder="Risk description"
-                className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-slate-100 focus:border-rose-400/60 focus:outline-none"
-              />
-              <div className="mt-3 flex flex-wrap gap-3 text-xs">
-                <label className="text-rose-100">
-                  Impact
-                  <select
-                    value={riskImpact}
-                    onChange={(event) => setRiskImpact(event.target.value as ConfidenceLevel)}
-                    className="ml-2 rounded-full border border-white/20 bg-slate-900 px-3 py-1 text-slate-100"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </label>
-                <label className="text-rose-100">
-                  Likelihood
-                  <select
-                    value={riskLikelihood}
-                    onChange={(event) =>
-                      setRiskLikelihood(event.target.value as ConfidenceLevel)
-                    }
-                    className="ml-2 rounded-full border border-white/20 bg-slate-900 px-3 py-1 text-slate-100"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </label>
-                <button
-                  onClick={handleRiskSubmit}
-                  className="rounded-full bg-white px-4 py-1 text-xs font-semibold text-slate-900"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          )}
-          <ul className="mt-4 space-y-2 text-rose-50">
-            {brainWorkflows.risks.map((item) => (
-              <li key={item.id} className="rounded-xl bg-black/20 px-3 py-2">
-                <p>{item.description}</p>
-                <div className="mt-1 flex flex-wrap gap-2 text-xs text-rose-100">
-                  <StatusChip label={`Impact: ${item.impact}`} variant="outline" className="border-rose-200/40 text-rose-50" />
-                  <StatusChip label={`Likelihood: ${item.likelihood}`} variant="outline" className="border-rose-200/40 text-rose-50" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </SectionBlock>
-      </div>
+      {isLoading ? (
+        <p className="text-sm text-slate-400">Loading mission…</p>
+      ) : mission ? (
+        <MissionCard mission={mission} onSave={saveMission} isSaving={isSaving} />
+      ) : (
+        <EmptyMissionState
+          error={error}
+          showCreateForm={showCreateForm}
+          onCreateClick={() => setShowCreateForm(true)}
+          onDismissForm={() => setShowCreateForm(false)}
+          isSaving={isSaving}
+          onCreate={createMission}
+        />
+      )}
 
-      <SectionBlock
-        eyebrow="Open questions"
-        className="tier-three p-5 text-sm text-slate-300"
-      >
-        <div className="mt-4 space-y-3">
-          {brainWorkflows.openQuestions.map((question) => {
-            const isOpen = expandedQuestion === question;
-            return (
-              <button
-                key={question}
-                onClick={() => setExpandedQuestion(isOpen ? null : question)}
-                className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-slate-100 transition ${
-                  isOpen
-                    ? "border-sky-400/50 bg-sky-500/10"
-                    : "border-white/10 bg-white/5 hover:border-sky-400/30"
-                }`}
-              >
-                <span className="text-sm">{question}</span>
-                <span className="text-xs tracking-[0.3em] text-slate-400">
-                  {isOpen ? "HIDE" : "EXPAND"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        {expandedQuestion && (
-          <p className="mt-4 text-xs text-slate-400">
-            Promote resolved questions to Decisions. Unresolved ones block the Scope handoff.
+      {mission && (
+        <DecisionsSection
+          decisions={decisions}
+          decisionRisks={decisionRisks}
+          isLoading={decisionsLoading}
+          error={decisionsError}
+          showCreate={showDecisionCreate}
+          decisionSavingId={decisionSavingId}
+          riskSavingId={riskSavingId}
+          activeRiskCreate={activeRiskCreate}
+          onCreateDecision={() => {
+            setShowDecisionCreate(true);
+            setIsDecisionEditing(true);
+          }}
+          onCancelDecisionCreate={() => {
+            setShowDecisionCreate(false);
+            setIsDecisionEditing(false);
+          }}
+          onCreateDecisionSubmit={createDecision}
+          onDecisionSave={updateDecision}
+          onDecisionEditingChange={(editing) => setIsDecisionEditing(editing)}
+          onShowRiskCreate={(decisionId) => {
+            setActiveRiskCreate(decisionId);
+            setIsRiskEditing(true);
+          }}
+          onCancelRiskCreate={() => {
+            setActiveRiskCreate(null);
+            setIsRiskEditing(false);
+          }}
+          onCreateRiskSubmit={createRisk}
+          onRiskSave={updateRisk}
+          onRiskEditingChange={(editing) => setIsRiskEditing(editing)}
+          riskMitigations={riskMitigations}
+          activeMitigationCreate={activeMitigationCreate}
+          mitigationSavingId={mitigationSavingId}
+          onShowMitigationCreate={(riskId) => {
+            setActiveMitigationCreate(riskId);
+            setIsMitigationEditing(true);
+          }}
+          onCancelMitigationCreate={() => {
+            setActiveMitigationCreate(null);
+            setIsMitigationEditing(false);
+          }}
+          onCreateMitigation={createMitigation}
+          onMitigationSave={updateMitigation}
+          onMitigationEditingChange={(editing) => setIsMitigationEditing(editing)}
+        />
+      )}
+    </div>
+  );
+}
+
+const stages = ["Mission", "Decisions", "Risks", "Mitigations", "Blueprint", "Tasks", "Snapshot"];
+
+function PipelineIndicator({ activeStage = 0 }: { activeStage?: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-xs text-slate-400">
+      <p className="text-[10px] uppercase tracking-[0.4em] text-slate-500">Architecture pipeline</p>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        {stages.map((stage, index) => (
+          <div key={stage} className="flex items-center gap-2">
+            <StageChip label={stage} active={index === activeStage} />
+            {index < stages.length - 1 && (
+              <span className="text-[10px] tracking-[0.4em] text-slate-500">→</span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StageChip({ label, active }: { label: string; active?: boolean }) {
+  return (
+    <span
+      className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] ${
+        active ? "bg-white text-slate-950" : "border border-white/20 text-slate-400"
+      }`}
+    >
+      {label}
+    </span>
+  );
+}
+
+type DecisionsSectionProps = {
+  decisions: Decision[];
+  decisionRisks: Record<string, Risk[]>;
+  riskMitigations: Record<string, Mitigation[]>;
+  isLoading: boolean;
+  error: string | null;
+  showCreate: boolean;
+  decisionSavingId: string | null;
+  riskSavingId: string | null;
+  activeRiskCreate: string | null;
+  onCreateDecision: () => void;
+  onCancelDecisionCreate: () => void;
+  onCreateDecisionSubmit: (fields: DecisionFields) => Promise<void>;
+  onDecisionSave: (id: string, fields: DecisionFields) => Promise<void>;
+  onDecisionEditingChange: (editing: boolean) => void;
+  onShowRiskCreate: (decisionId: string) => void;
+  onCancelRiskCreate: () => void;
+  onCreateRiskSubmit: (decisionId: string, fields: RiskFields) => Promise<void>;
+  onRiskSave: (riskId: string, decisionId: string, fields: RiskFields) => Promise<void>;
+  onRiskEditingChange: (editing: boolean) => void;
+  activeMitigationCreate: string | null;
+  mitigationSavingId: string | null;
+  onShowMitigationCreate: (riskId: string) => void;
+  onCancelMitigationCreate: () => void;
+  onCreateMitigationSubmit: (riskId: string, fields: MitigationFields) => Promise<void>;
+  onMitigationSave: (mitigationId: string, riskId: string, fields: MitigationFields) => Promise<void>;
+  onMitigationEditingChange: (editing: boolean) => void;
+};
+
+function DecisionsSection({
+  decisions,
+  decisionRisks,
+  riskMitigations,
+  isLoading,
+  error,
+  showCreate,
+  decisionSavingId,
+  riskSavingId,
+  activeRiskCreate,
+  onCreateDecision,
+  onCancelDecisionCreate,
+  onCreateDecisionSubmit,
+  onDecisionSave,
+  onDecisionEditingChange,
+  onShowRiskCreate,
+  onCancelRiskCreate,
+  onCreateRiskSubmit,
+  onRiskSave,
+  onRiskEditingChange,
+  activeMitigationCreate,
+  mitigationSavingId,
+  onShowMitigationCreate,
+  onCancelMitigationCreate,
+  onCreateMitigationSubmit,
+  onMitigationSave,
+  onMitigationEditingChange,
+}: DecisionsSectionProps) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Architecture decisions</p>
+          <p className="text-sm text-slate-400">
+            Decisions connect the mission to the rest of the architecture pipeline.
           </p>
+        </div>
+        {!showCreate && (
+          <button
+            onClick={onCreateDecision}
+            className="rounded-full border border-white/30 px-4 py-2 text-xs font-semibold text-white hover:border-white"
+          >
+            Add decision
+          </button>
         )}
-      </SectionBlock>
+      </div>
 
-      <SectionBlock eyebrow="Focus" className="tier-three p-5 text-sm text-slate-200">
-        <p className="mt-3">
-          Promote answers from Open Questions once validated. Move risks into the Task Board when
-          mitigation tasks exist.
-        </p>
-      </SectionBlock>
+      {showCreate && (
+        <DecisionCreatePanel
+          onCreate={async (fields) => {
+            await onCreateDecisionSubmit(fields);
+            onDecisionEditingChange(false);
+          }}
+          isSaving={decisionSavingId === "new"}
+          onCancel={() => {
+            onCancelDecisionCreate();
+            onDecisionEditingChange(false);
+          }}
+        />
+      )}
+
+      {isLoading ? (
+        <p className="text-sm text-slate-400">Loading decisions…</p>
+      ) : decisions.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-white/15 bg-slate-950/40 p-6 text-center text-sm text-slate-400">
+          <p>No architectural decisions recorded yet.</p>
+          {!showCreate && (
+            <button
+              onClick={onCreateDecision}
+              className="mt-4 rounded-full bg-white px-5 py-2 text-xs font-semibold text-slate-900 shadow-lg shadow-slate-900/20"
+            >
+              Add decision
+            </button>
+          )}
+          {error && <p className="mt-3 text-xs text-rose-300">{error}</p>}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {decisions.map((decision) => (
+            <div key={decision.id} className="space-y-3 rounded-3xl border border-white/10 bg-slate-950/40 p-4">
+              <DecisionCard
+                decision={decision}
+                onSave={(fields) => onDecisionSave(decision.id, fields)}
+                isSaving={decisionSavingId === decision.id}
+                onEditingChange={(editing) => onDecisionEditingChange(editing)}
+              />
+              <RiskSection
+                decisionId={decision.id}
+                risks={decisionRisks[decision.id] ?? []}
+                showCreate={activeRiskCreate === decision.id}
+                riskSavingId={riskSavingId}
+                onShowCreate={() => onShowRiskCreate(decision.id)}
+                onCancelCreate={onCancelRiskCreate}
+                onCreateRisk={(fields) => onCreateRiskSubmit(decision.id, fields)}
+                onRiskSave={onRiskSave}
+                onRiskEditingChange={onRiskEditingChange}
+                riskMitigations={riskMitigations}
+                activeMitigationCreate={activeMitigationCreate}
+                mitigationSavingId={mitigationSavingId}
+                onShowMitigationCreate={onShowMitigationCreate}
+                onCancelMitigationCreate={onCancelMitigationCreate}
+                onCreateMitigation={onCreateMitigationSubmit}
+                onMitigationSave={onMitigationSave}
+                onMitigationEditingChange={onMitigationEditingChange}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type RiskSectionProps = {
+  decisionId: string;
+  risks: Risk[];
+  showCreate: boolean;
+  riskSavingId: string | null;
+  onShowCreate: () => void;
+  onCancelCreate: () => void;
+  onCreateRisk: (fields: RiskFields) => Promise<void>;
+  onRiskSave: (riskId: string, decisionId: string, fields: RiskFields) => Promise<void>;
+  onRiskEditingChange: (editing: boolean) => void;
+  riskMitigations: Record<string, Mitigation[]>;
+  activeMitigationCreate: string | null;
+  mitigationSavingId: string | null;
+  onShowMitigationCreate: (riskId: string) => void;
+  onCancelMitigationCreate: () => void;
+  onCreateMitigation: (riskId: string, fields: MitigationFields) => Promise<void>;
+  onMitigationSave: (mitigationId: string, riskId: string, fields: MitigationFields) => Promise<void>;
+  onMitigationEditingChange: (editing: boolean) => void;
+};
+
+function RiskSection({
+  decisionId,
+  risks,
+  showCreate,
+  riskSavingId,
+  onShowCreate,
+  onCancelCreate,
+  onCreateRisk,
+  onRiskSave,
+  onRiskEditingChange,
+  riskMitigations,
+  activeMitigationCreate,
+  mitigationSavingId,
+  onShowMitigationCreate,
+  onCancelMitigationCreate,
+  onCreateMitigation,
+  onMitigationSave,
+  onMitigationEditingChange,
+}: RiskSectionProps) {
+  return (
+    <div className="space-y-3 border-t border-white/10 pt-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Risks</p>
+        {!showCreate && (
+          <button
+            onClick={onShowCreate}
+            className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white"
+          >
+            Add risk
+          </button>
+        )}
+      </div>
+      {showCreate && (
+        <RiskCreatePanel
+          onCreate={async (fields) => {
+            await onCreateRisk(fields);
+            onRiskEditingChange(false);
+          }}
+          isSaving={riskSavingId === `new-${decisionId}`}
+          onCancel={() => {
+            onCancelCreate();
+            onRiskEditingChange(false);
+          }}
+        />
+      )}
+      {risks.length === 0 ? (
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-xs text-slate-400">
+          No risks recorded for this decision.
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {risks.map((risk) => (
+            <div key={risk.id} className="space-y-3 rounded-2xl border border-white/15 bg-black/20 p-3">
+              <RiskCard
+                risk={risk}
+                onSave={(fields) => onRiskSave(risk.id, decisionId, fields)}
+                isSaving={riskSavingId === risk.id}
+                onEditingChange={onRiskEditingChange}
+              />
+              <MitigationSection
+                riskId={risk.id}
+                mitigations={riskMitigations[risk.id] ?? []}
+                showCreate={activeMitigationCreate === risk.id}
+                mitigationSavingId={mitigationSavingId}
+                onShowCreate={() => onShowMitigationCreate(risk.id)}
+                onCancelCreate={onCancelMitigationCreate}
+                onCreateMitigation={(fields) => onCreateMitigation(risk.id, fields)}
+                onMitigationSave={(mitigationId, fields) => onMitigationSave(mitigationId, risk.id, fields)}
+                onMitigationEditingChange={onMitigationEditingChange}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type MitigationSectionProps = {
+  riskId: string;
+  mitigations: Mitigation[];
+  showCreate: boolean;
+  mitigationSavingId: string | null;
+  onShowCreate: () => void;
+  onCancelCreate: () => void;
+  onCreateMitigation: (fields: MitigationFields) => Promise<void>;
+  onMitigationSave: (mitigationId: string, fields: MitigationFields) => Promise<void>;
+  onMitigationEditingChange: (editing: boolean) => void;
+};
+
+function MitigationSection({
+  riskId,
+  mitigations,
+  showCreate,
+  mitigationSavingId,
+  onShowCreate,
+  onCancelCreate,
+  onCreateMitigation,
+  onMitigationSave,
+  onMitigationEditingChange,
+}: MitigationSectionProps) {
+  return (
+    <div className="space-y-3 border-t border-white/10 pt-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Mitigations</p>
+        {!showCreate && (
+          <button
+            onClick={onShowCreate}
+            className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white"
+          >
+            Add mitigation
+          </button>
+        )}
+      </div>
+      {showCreate && (
+        <MitigationCreatePanel
+          onCreate={async (fields) => {
+            await onCreateMitigation(fields);
+            onMitigationEditingChange(false);
+          }}
+          isSaving={mitigationSavingId === `new-${riskId}`}
+          onCancel={() => {
+            onCancelCreate();
+            onMitigationEditingChange(false);
+          }}
+        />
+      )}
+      {mitigations.length === 0 ? (
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-3 text-xs text-slate-400">
+          No mitigation strategies defined yet.
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          {mitigations.map((mitigation) => (
+            <MitigationCard
+              key={mitigation.id}
+              mitigation={mitigation}
+              onSave={(fields) => onMitigationSave(mitigation.id, fields)}
+              isSaving={mitigationSavingId === mitigation.id}
+              onEditingChange={onMitigationEditingChange}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type EmptyStateProps = {
+  error: string | null;
+  showCreateForm: boolean;
+  isSaving: boolean;
+  onCreateClick: () => void;
+  onDismissForm: () => void;
+  onCreate: (fields: MissionFields) => Promise<void>;
+};
+
+function EmptyMissionState({
+  error,
+  showCreateForm,
+  isSaving,
+  onCreateClick,
+  onDismissForm,
+  onCreate,
+}: EmptyStateProps) {
+  if (showCreateForm) {
+    return (
+      <div className="space-y-4">
+        <MissionCreatePanel onCreate={onCreate} isSaving={isSaving} />
+        <button
+          onClick={onDismissForm}
+          className="rounded-full border border-white/30 px-6 py-2 text-sm font-semibold text-white hover:border-white"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-3xl border border-dashed border-white/20 bg-slate-950/40 p-8 text-center text-sm text-slate-400">
+      <p className="text-base font-semibold text-white">Define the mission of the system you are designing.</p>
+      <p className="mt-2 text-slate-400">
+        Missions capture the problem, constraints, and success criteria so future decisions stay grounded.
+      </p>
+      <button
+        onClick={onCreateClick}
+        className="mt-6 rounded-full bg-white px-6 py-2 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/20"
+      >
+        Create mission
+      </button>
+      {error && <p className="mt-4 text-xs text-rose-300">{error}</p>}
     </div>
   );
 }
