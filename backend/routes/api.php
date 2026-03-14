@@ -13,6 +13,7 @@ Route::prefix('missions')->group(function () {
     Route::get('{id}', [MissionController::class, 'show']);
     Route::put('{id}', [MissionController::class, 'update']);
     Route::get('{id}/decisions', [DecisionController::class, 'forMission']);
+    Route::get('{id}/blueprints', [BlueprintController::class, 'forMission']);
 });
 
 Route::prefix('decisions')->group(function () {

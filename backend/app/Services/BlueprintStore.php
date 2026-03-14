@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Blueprint;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
 class BlueprintStore
@@ -41,9 +40,14 @@ class BlueprintStore
         return array_map(fn (Blueprint $blueprint) => $blueprint->toArray(), $items);
     }
 
+    public static function forMission(string $missionId): array
+    {
+        return array_values(array_filter(self::all(), fn ($blueprint) => $blueprint['mission_id'] === $missionId));
+    }
+
     public static function forMitigation(string $mitigationId): array
     {
-        return array_values(array_filter(self::all(), fn ($blueprint) => $blueprint['mitigation_id'] === $mitigationId));
+        return array_values(array_filter(self::all(), fn ($blueprint) => ($blueprint['mitigation_id'] ?? null) === $mitigationId));
     }
 
     public static function find(string $id): ?Blueprint
@@ -61,14 +65,7 @@ class BlueprintStore
     public static function create(array $attributes): Blueprint
     {
         $now = Carbon::now()->toISOString();
-        $blueprint = new Blueprint([
-            'id' => $attributes['id'] ?? 'blueprint_'.Str::uuid()->toString(),
-            'mitigation_id' => $attributes['mitigation_id'],
-            'title' => $attributes['title'],
-            'phases' => self::normalizePhases($attributes['phases'] ?? []),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $blueprint = new Blueprint(self::buildPayload($attributes, $now));
 
         self::store($blueprint);
 
@@ -77,18 +74,14 @@ class BlueprintStore
 
     public static function update(Blueprint $blueprint, array $attributes): Blueprint
     {
-        $phases = array_key_exists('phases', $attributes)
-            ? self::normalizePhases($attributes['phases'] ?? [])
-            : $blueprint->phases;
-
-        $blueprint = new Blueprint([
+        $payload = array_merge($blueprint->toArray(), $attributes, [
             'id' => $blueprint->id,
-            'mitigation_id' => $attributes['mitigation_id'] ?? $blueprint->mitigation_id,
-            'title' => $attributes['title'] ?? $blueprint->title,
-            'phases' => $phases,
+            'mission_id' => $attributes['mission_id'] ?? $blueprint->mission_id,
             'created_at' => $blueprint->created_at,
             'updated_at' => Carbon::now()->toISOString(),
         ]);
+
+        $blueprint = new Blueprint(self::buildPayload($payload, $payload['updated_at']));
 
         self::store($blueprint);
 
@@ -110,14 +103,57 @@ class BlueprintStore
         File::put(self::pathFor($blueprint->id), json_encode($blueprint->toArray(), JSON_PRETTY_PRINT));
     }
 
-    protected static function normalizePhases(array $phases): array
+    protected static function buildPayload(array $attributes, string $timestamp): array
     {
-        return array_values(array_map(function ($phase) {
+        $components = self::normalizeArray($attributes['components'] ?? $attributes['phases'] ?? []);
+        $techStack = self::normalizeValueArray($attributes['tech_stack'] ?? []);
+        $decisions = self::normalizeValueArray($attributes['decisions'] ?? []);
+        $risks = self::normalizeValueArray($attributes['risks'] ?? []);
+        $mitigations = self::normalizeValueArray($attributes['mitigations'] ?? []);
+        $phases = self::normalizeArray($attributes['phases'] ?? $components);
+
+        return [
+            'id' => $attributes['id'] ?? uniqid('blueprint_'),
+            'mission_id' => $attributes['mission_id'],
+            'mitigation_id' => $attributes['mitigation_id'] ?? null,
+            'title' => $attributes['title'] ?? '',
+            'description' => $attributes['description'] ?? '',
+            'components' => $components,
+            'tech_stack' => $techStack,
+            'decisions' => $decisions,
+            'risks' => $risks,
+            'mitigations' => $mitigations,
+            'phases' => $phases,
+            'created_at' => $attributes['created_at'] ?? $timestamp,
+            'updated_at' => $timestamp,
+        ];
+    }
+
+    protected static function normalizeArray(array $items): array
+    {
+        return array_values(array_map(function ($item) {
+            if (is_array($item)) {
+                return [
+                    'id' => $item['id'] ?? uniqid('component_'),
+                    'title' => $item['title'] ?? ($item['name'] ?? ''),
+                    'description' => $item['description'] ?? '',
+                ];
+            }
+
             return [
-                'id' => $phase['id'] ?? 'phase_'.Str::uuid()->toString(),
-                'title' => $phase['title'] ?? '',
-                'description' => $phase['description'] ?? '',
+                'id' => uniqid('component_'),
+                'title' => (string) $item,
+                'description' => '',
             ];
-        }, $phases));
+        }, $items));
+    }
+
+    protected static function normalizeValueArray($value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_map('strval', $value));
     }
 }

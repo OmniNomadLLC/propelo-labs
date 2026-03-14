@@ -3,12 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Services\BlueprintStore;
+use App\Services\MissionStore;
+use App\Services\MitigationStore;
+use App\Services\RiskStore;
+use App\Services\DecisionStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class BlueprintController extends Controller
 {
+    public function forMission(string $missionId): JsonResponse
+    {
+        $mission = MissionStore::find($missionId);
+        if (! $mission) {
+            return response()->json(['message' => 'Mission not found'], 404);
+        }
+
+        return response()->json(BlueprintStore::forMission($missionId));
+    }
+
     public function forMitigation(string $mitigationId): JsonResponse
     {
         return response()->json(BlueprintStore::forMitigation($mitigationId));
@@ -19,10 +33,29 @@ class BlueprintController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $data = $this->validatedData($request);
-        $blueprint = BlueprintStore::create($data);
+        $payload = $this->validatedData($request);
+        $missionId = $payload['mission_id'] ?? null;
+        if (! $missionId) {
+            $missionId = $this->resolveMissionId($payload['mitigation_id'] ?? null);
+        }
 
-        return response()->json($blueprint->toArray(), 201);
+        if (! $missionId) {
+            return response()->json(['error' => 'mission_id_required'], 422);
+        }
+
+        $mission = MissionStore::find($missionId);
+        if (! $mission) {
+            return response()->json(['error' => 'mission_not_found'], 404);
+        }
+
+        $payload['mission_id'] = $missionId;
+        $blueprint = BlueprintStore::create($payload);
+
+        return response()->json([
+            'id' => $blueprint->id,
+            'mission_id' => $blueprint->mission_id,
+            'title' => $blueprint->title,
+        ], 201);
     }
 
     /**
@@ -59,14 +92,42 @@ class BlueprintController extends Controller
     protected function validatedData(Request $request, bool $partial = false): array
     {
         $rules = [
-            'mitigation_id' => [$partial ? 'sometimes' : 'required', 'string'],
+            'mission_id' => ['sometimes', 'string'],
+            'mitigation_id' => ['sometimes', 'string'],
             'title' => [$partial ? 'sometimes' : 'required', 'string', 'max:200'],
+            'description' => ['sometimes', 'string'],
+            'components' => ['sometimes', 'array'],
+            'tech_stack' => ['sometimes', 'array'],
+            'decisions' => ['sometimes', 'array'],
+            'risks' => ['sometimes', 'array'],
+            'mitigations' => ['sometimes', 'array'],
             'phases' => ['sometimes', 'array'],
-            'phases.*.id' => ['sometimes', 'string'],
-            'phases.*.title' => ['required_with:phases', 'string', 'max:200'],
-            'phases.*.description' => ['nullable', 'string'],
         ];
 
         return $this->validate($request, $rules);
+    }
+
+    protected function resolveMissionId(?string $mitigationId): ?string
+    {
+        if (! $mitigationId) {
+            return null;
+        }
+
+        $mitigation = MitigationStore::find($mitigationId);
+        if (! $mitigation) {
+            return null;
+        }
+
+        $risk = RiskStore::find($mitigation->risk_id);
+        if (! $risk) {
+            return null;
+        }
+
+        $decision = DecisionStore::find($risk->decision_id);
+        if (! $decision) {
+            return null;
+        }
+
+        return $decision->mission_id;
     }
 }
