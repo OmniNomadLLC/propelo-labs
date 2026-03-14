@@ -40,21 +40,28 @@ class RiskController extends Controller
         return response()->json($risk->toArray());
     }
 
-    /**
-     * @throws ValidationException
-     */
     public function store(Request $request): JsonResponse
     {
-        $data = $this->validateRisk($request);
-        $decision = DecisionStore::find($data['decision_id']);
-        if (! $decision) {
-            return response()->json(['message' => 'Decision not found'], 404);
+        $payload = $request->all();
+        $decisionId = $payload['decision_id'] ?? null;
+        if (! is_string($decisionId) || $decisionId === '') {
+            return response()->json(['error' => 'decision_id_required'], 422);
         }
 
-        $risk = RiskStore::create($data);
+        $decision = DecisionStore::find($decisionId);
+        if (! $decision) {
+            return response()->json(['error' => 'decision_not_found'], 404);
+        }
+
+        $payload['decision_id'] = $decisionId;
+        $risk = RiskStore::create($payload);
         DecisionStore::addRiskReference($decision, $risk->id);
 
-        return response()->json($risk->toArray(), 201);
+        return response()->json([
+            'id' => $risk->id,
+            'decision_id' => $risk->decision_id,
+            'title' => $risk->title,
+        ], 201);
     }
 
     /**
@@ -81,10 +88,12 @@ class RiskController extends Controller
         $rules = [
             'decision_id' => [$partial ? 'sometimes' : 'required', 'string'],
             'title' => [$partial ? 'sometimes' : 'required', 'string', 'max:200'],
-            'description' => [$partial ? 'sometimes' : 'required', 'string'],
-            'severity' => [$partial ? 'sometimes' : 'required', 'string', 'max:50'],
-            'likelihood' => [$partial ? 'sometimes' : 'required', 'string', 'max:50'],
-            'mitigation' => [$partial ? 'sometimes' : 'required', 'string'],
+            'description' => ['sometimes', 'string'],
+            'likelihood' => ['sometimes', 'string', 'max:100'],
+            'impact' => ['sometimes', 'string', 'max:100'],
+            'severity_score' => ['sometimes'],
+            'status' => ['sometimes', 'string', 'max:50'],
+            'mitigations' => ['sometimes', 'array'],
         ];
 
         return $this->validate($request, $rules);

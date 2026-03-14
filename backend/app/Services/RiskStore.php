@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Risk;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
 
 class RiskStore
@@ -61,18 +60,7 @@ class RiskStore
     public static function create(array $attributes): Risk
     {
         $now = Carbon::now()->toISOString();
-        $risk = new Risk([
-            'id' => $attributes['id'] ?? 'risk_'.Str::uuid()->toString(),
-            'decision_id' => $attributes['decision_id'],
-            'title' => $attributes['title'],
-            'description' => $attributes['description'],
-            'severity' => $attributes['severity'],
-            'likelihood' => $attributes['likelihood'],
-            'mitigation' => $attributes['mitigation'],
-            'mitigations' => $attributes['mitigations'] ?? [],
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
+        $risk = new Risk(self::buildPayload($attributes, $now));
 
         self::store($risk);
 
@@ -81,30 +69,20 @@ class RiskStore
 
     public static function update(Risk $risk, array $attributes): Risk
     {
-        $risk = new Risk([
+        $payload = array_merge($risk->toArray(), $attributes, [
             'id' => $risk->id,
             'decision_id' => $risk->decision_id,
-            'title' => $attributes['title'] ?? $risk->title,
-            'description' => $attributes['description'] ?? $risk->description,
-            'severity' => $attributes['severity'] ?? $risk->severity,
-            'likelihood' => $attributes['likelihood'] ?? $risk->likelihood,
-            'mitigation' => $attributes['mitigation'] ?? $risk->mitigation,
-            'mitigations' => $attributes['mitigations'] ?? $risk->mitigations,
             'created_at' => $risk->created_at,
             'updated_at' => Carbon::now()->toISOString(),
         ]);
+
+        $risk = new Risk(self::buildPayload($payload, $payload['updated_at']));
 
         self::store($risk);
 
         return $risk;
     }
 
-    protected static function store(Risk $risk): void
-    {
-        self::ensureDirectory();
-        File::put(self::pathFor($risk->id), json_encode($risk->toArray(), JSON_PRETTY_PRINT));
-    }
-}
     public static function addMitigationReference(Risk $risk, string $mitigationId): void
     {
         $mitigations = $risk->mitigations ?? [];
@@ -112,18 +90,36 @@ class RiskStore
             $mitigations[] = $mitigationId;
         }
 
-        $updated = new Risk([
-            'id' => $risk->id,
-            'decision_id' => $risk->decision_id,
-            'title' => $risk->title,
-            'description' => $risk->description,
-            'severity' => $risk->severity,
-            'likelihood' => $risk->likelihood,
-            'mitigation' => $risk->mitigation,
+        $payload = array_merge($risk->toArray(), [
             'mitigations' => $mitigations,
-            'created_at' => $risk->created_at,
             'updated_at' => Carbon::now()->toISOString(),
         ]);
 
+        $updated = new Risk(self::buildPayload($payload, $payload['updated_at']));
+
         self::store($updated);
     }
+
+    protected static function store(Risk $risk): void
+    {
+        self::ensureDirectory();
+        File::put(self::pathFor($risk->id), json_encode($risk->toArray(), JSON_PRETTY_PRINT));
+    }
+
+    protected static function buildPayload(array $attributes, string $timestamp): array
+    {
+        return [
+            'id' => $attributes['id'] ?? uniqid('risk_'),
+            'decision_id' => $attributes['decision_id'],
+            'title' => $attributes['title'] ?? '',
+            'description' => $attributes['description'] ?? '',
+            'likelihood' => $attributes['likelihood'] ?? '',
+            'impact' => $attributes['impact'] ?? '',
+            'severity_score' => $attributes['severity_score'] ?? null,
+            'status' => $attributes['status'] ?? 'open',
+            'mitigations' => is_array($attributes['mitigations'] ?? null) ? $attributes['mitigations'] : [],
+            'created_at' => $attributes['created_at'] ?? $timestamp,
+            'updated_at' => $timestamp,
+        ];
+    }
+}
