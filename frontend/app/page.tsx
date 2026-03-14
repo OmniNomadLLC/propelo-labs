@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
+import { IconCard, SectionBlock } from "@/app/ui/primitives";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -358,48 +359,41 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="problem" className="space-y-6">
-          <p className="eyebrow">Problem</p>
-          <h2 className="text-3xl font-semibold text-white">
-            Workflow projects die long before anyone opens a builder.
-          </h2>
-          <div className="grid gap-5 lg:grid-cols-3">
-            {painPoints.map((pain, index) => {
-              const Icon = pain.icon;
-              return (
-                <div
+        <section id="problem">
+          <SectionBlock
+            eyebrow="Problem"
+            title="Workflow projects die long before anyone opens a builder."
+            className="space-y-6"
+          >
+            <div className="grid gap-5 lg:grid-cols-3">
+              {painPoints.map((pain, index) => (
+                <IconCard
                   key={pain.title}
+                  icon={pain.icon}
+                  title={pain.title}
+                  description={pain.description}
+                  metaLeft={pain.label}
+                  metaRight={`0${index + 1}`}
                   className="tier-two relative overflow-hidden rounded-3xl p-6"
-                >
-                  <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate-400">
-                    <span>{pain.label}</span>
-                    <span className="text-slate-500">0{index + 1}</span>
-                  </div>
-                  <div className="mt-4 flex items-center gap-3 text-white">
-                    <Icon />
-                    <h3 className="text-lg font-semibold">{pain.title}</h3>
-                  </div>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-200">
-                    {pain.description}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                />
+              ))}
+            </div>
+          </SectionBlock>
         </section>
 
-        <section id="solution" className="space-y-6">
-          <p className="eyebrow">Solution flow</p>
-          <h2 className="text-3xl font-semibold text-white">
-            A guided operating system from Intake to Wrap-up.
-          </h2>
-          <div className="tier-two overflow-hidden rounded-3xl border border-white/10 bg-slate-950/60 p-6">
-            <ol className="grid gap-4 md:grid-cols-5">
-              {flowSteps.map((step, index) => {
-                const Icon = step.icon;
-                const last = index === flowSteps.length - 1;
-                return (
-                  <li
+        <section id="solution">
+          <SectionBlock
+            eyebrow="Solution flow"
+            title="A guided operating system from Intake to Wrap-up."
+            className="space-y-6"
+          >
+            <div className="tier-two overflow-hidden rounded-3xl border border-white/10 bg-slate-950/60 p-6">
+              <ol className="grid gap-4 md:grid-cols-5">
+                {flowSteps.map((step, index) => {
+                  const Icon = step.icon;
+                  const last = index === flowSteps.length - 1;
+                  return (
+                    <li
                     key={step.title}
                     className={`relative rounded-2xl border border-white/10 bg-white/5 p-5 ${
                       !last
@@ -418,172 +412,152 @@ export default function Home() {
                     </p>
                     <p className="mt-2 text-sm leading-relaxed text-slate-200">
                       {step.copy}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </section>
-
-        <section id="features" className="space-y-6">
-          <p className="eyebrow">Features & benefits</p>
-          <h2 className="text-3xl font-semibold text-white">
-            Every screen behaves like an operator-grade system surface.
-          </h2>
-          <div className="grid gap-5 md:grid-cols-2">
-            {featureTiles.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={feature.title}
-                  className="tier-three flex flex-col gap-4 rounded-3xl p-6"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon />
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                        {feature.tag}
                       </p>
-                      <h3 className="text-lg font-semibold text-white">
-                        {feature.title}
-                      </h3>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-slate-200">
-                    {feature.body}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section id="who" className="space-y-6">
-          <p className="eyebrow">Who it’s for</p>
-          <h2 className="text-3xl font-semibold text-white">
-            Built for builders who turn vague intent into reliable execution.
-          </h2>
-          <div className="grid gap-5 lg:grid-cols-3">
-            {personas.map((persona) => {
-              const Icon = persona.icon;
-              return (
-                <div
-                  key={persona.name}
-                  className="tier-three flex flex-col gap-3 rounded-3xl p-6"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon />
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-                        {persona.chip}
-                      </p>
-                      <h3 className="text-lg font-semibold text-white">
-                        {persona.name}
-                      </h3>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-slate-200">
-                    {persona.focus}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section id="differentiation" className="space-y-6">
-          <p className="eyebrow">Differentiation</p>
-          <h2 className="text-3xl font-semibold text-white">
-            Propelo vs. the typical “AI tool” promise.
-          </h2>
-          <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
-            <div className="tier-three rounded-3xl p-6">
-              <p className="text-sm font-semibold text-rose-300">Traditional tooling</p>
-              <ul className="mt-4 space-y-3 text-sm text-slate-200">
-                <li>• Generic chat wrappers with no project memory.</li>
-                <li>• Unscoped promises that collapse during handoff.</li>
-                <li>• No proof-of-work artifacts or continuity layer.</li>
-              </ul>
-            </div>
-            <div className="tier-one rounded-3xl p-6">
-              <p className="text-sm font-semibold text-emerald-300">
-                Why Propelo Labs is different
-              </p>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                {differentiation.map((diff) => {
-                  const Icon = diff.icon;
-                  return (
-                    <div key={diff.title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="flex items-center gap-3">
-                        <Icon />
-                        <h3 className="text-base font-semibold text-white">
-                          {diff.title}
-                        </h3>
-                      </div>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-200">
-                        {diff.detail}
-                      </p>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ol>
             </div>
-          </div>
+          </SectionBlock>
         </section>
 
-        <section id="use-case" className="space-y-6">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
-            Example use case
-          </p>
-          <div className="tier-one relative overflow-hidden rounded-3xl border border-sky-500/30 bg-slate-900/60 p-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent" />
-            <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-                  Seeded demo
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold text-white">
-                  Lead Reactivation for Dental Clinic
-                </h3>
-              </div>
-              <Link
-                href="/workspace/scope"
-                className="rounded-full border border-sky-400/70 px-5 py-2 text-sm font-semibold text-sky-300"
-              >
-                View blueprint screen
-              </Link>
+        <section id="features">
+          <SectionBlock
+            eyebrow="Features & benefits"
+            title="Every screen behaves like an operator-grade system surface."
+            className="space-y-6"
+          >
+            <div className="grid gap-5 md:grid-cols-2">
+              {featureTiles.map((feature) => (
+                <IconCard
+                  key={feature.title}
+                  icon={feature.icon}
+                  tag={feature.tag}
+                  title={feature.title}
+                  description={feature.body}
+                  className="tier-three rounded-3xl p-6"
+                  descriptionClassName="mt-4 text-sm leading-relaxed text-slate-200"
+                />
+              ))}
             </div>
-            <div className="relative z-10 mt-8 grid gap-5 md:grid-cols-3">
-              {useCaseMilestones.map((milestone) => (
-                <div key={milestone.label} className="space-y-2">
+          </SectionBlock>
+        </section>
+
+        <section id="who">
+          <SectionBlock
+            eyebrow="Who it’s for"
+            title="Built for builders who turn vague intent into reliable execution."
+            className="space-y-6"
+          >
+            <div className="grid gap-5 lg:grid-cols-3">
+              {personas.map((persona) => (
+                <IconCard
+                  key={persona.name}
+                  icon={persona.icon}
+                  tag={persona.chip}
+                  title={persona.name}
+                  description={persona.focus}
+                  className="tier-three rounded-3xl p-6"
+                  descriptionClassName="mt-3 text-sm leading-relaxed text-slate-200"
+                />
+              ))}
+            </div>
+          </SectionBlock>
+        </section>
+
+        <section id="differentiation">
+          <SectionBlock
+            eyebrow="Differentiation"
+            title="Propelo vs. the typical “AI tool” promise."
+            className="space-y-6"
+          >
+            <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
+              <div className="tier-three rounded-3xl p-6">
+                <p className="text-sm font-semibold text-rose-300">Traditional tooling</p>
+                <ul className="mt-4 space-y-3 text-sm text-slate-200">
+                  <li>• Generic chat wrappers with no project memory.</li>
+                  <li>• Unscoped promises that collapse during handoff.</li>
+                  <li>• No proof-of-work artifacts or continuity layer.</li>
+                </ul>
+              </div>
+              <div className="tier-one rounded-3xl p-6">
+                <p className="text-sm font-semibold text-emerald-300">
+                  Why Propelo Labs is different
+                </p>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {differentiation.map((diff) => (
+                    <IconCard
+                      key={diff.title}
+                      icon={diff.icon}
+                      title={diff.title}
+                      description={diff.detail}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                      titleClassName="text-base font-semibold text-white"
+                      descriptionClassName="mt-2 text-sm leading-relaxed text-slate-200"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SectionBlock>
+        </section>
+
+        <section id="use-case">
+          <SectionBlock
+            eyebrow="Example use case"
+            className="space-y-6"
+            eyebrowClassName="text-sm uppercase tracking-[0.3em] text-slate-400"
+          >
+            <div className="tier-one relative overflow-hidden rounded-3xl border border-sky-500/30 bg-slate-900/60 p-8">
+              <div className="absolute inset-0 bg-gradient-to-r from-sky-500/10 to-transparent" />
+              <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
                   <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
-                    {milestone.label}
+                    Seeded demo
                   </p>
-                  <p className="text-sm text-slate-200">{milestone.text}</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-white">
+                    Lead Reactivation for Dental Clinic
+                  </h3>
+                </div>
+                <Link
+                  href="/workspace/scope"
+                  className="rounded-full border border-sky-400/70 px-5 py-2 text-sm font-semibold text-sky-300"
+                >
+                  View blueprint screen
+                </Link>
+              </div>
+              <div className="relative z-10 mt-8 grid gap-5 md:grid-cols-3">
+                {useCaseMilestones.map((milestone) => (
+                  <div key={milestone.label} className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-slate-400">
+                      {milestone.label}
+                    </p>
+                    <p className="text-sm text-slate-200">{milestone.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </SectionBlock>
+        </section>
+
+        <section id="vision">
+          <SectionBlock
+            eyebrow="Long-term vision"
+            title="Phase 1: Workflow & automation blueprinting. Future: build OS."
+            className="space-y-6"
+            eyebrowClassName="text-sm uppercase tracking-[0.3em] text-slate-400"
+          >
+            <div className="grid gap-4 md:grid-cols-3">
+              {visionPillars.map((pillar) => (
+                <div
+                  key={pillar}
+                  className="tier-three hover-lift p-6 text-sm leading-relaxed text-slate-200"
+                >
+                  {pillar}
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section id="vision" className="space-y-6">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">
-            Long-term vision
-          </p>
-          <h2 className="text-3xl font-semibold text-white">
-            Phase 1: Workflow & automation blueprinting. Future: build OS.
-          </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {visionPillars.map((pillar) => (
-              <div
-                key={pillar}
-                className="tier-three hover-lift p-6 text-sm leading-relaxed text-slate-200"
-              >
-                {pillar}
-              </div>
-            ))}
-          </div>
+          </SectionBlock>
         </section>
 
         <section

@@ -2,22 +2,7 @@
 
 import { useState } from "react";
 import { intakeData, projectSummary } from "../demo-data";
-
-const FieldCard = ({ title, items }: { title: string; items: string[] }) => (
-  <div className="tier-three p-5">
-    <p className="text-xs uppercase tracking-[0.4em] text-slate-500">{title}</p>
-    <ul className="mt-3 space-y-2 text-sm text-slate-100">
-      {items.map((item) => (
-        <li
-          key={item}
-          className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
-        >
-          {item}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
+import { SectionBlock } from "@/app/ui/primitives";
 
 const promptDetails: Record<string, string> = {
   "Clarify tone for SMS vs email sequences":
@@ -111,14 +96,33 @@ export default function IntakeScreen() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <FieldCard title="Success signals" items={intakeData.successSignals} />
-        <FieldCard title="Constraints" items={intakeData.constraints} />
+        <SectionBlock eyebrow="Success signals" className="tier-three p-5">
+          <ul className="mt-3 space-y-2 text-sm text-slate-100">
+            {intakeData.successSignals.map((item) => (
+              <li
+                key={item}
+                className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </SectionBlock>
+        <SectionBlock eyebrow="Constraints" className="tier-three p-5">
+          <ul className="mt-3 space-y-2 text-sm text-slate-100">
+            {intakeData.constraints.map((item) => (
+              <li
+                key={item}
+                className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-slate-200"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </SectionBlock>
       </div>
 
-      <div className="tier-three p-5">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-          Working assumptions
-        </p>
+      <SectionBlock eyebrow="Working assumptions" className="tier-three p-5">
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {intakeData.assumptions.map((assumption) => (
             <div key={assumption} className="rounded-xl bg-white/5 p-4 text-sm text-slate-200">
@@ -130,12 +134,9 @@ export default function IntakeScreen() {
           Anything uncertain belongs here. Promote items into the Project Brain
           when validated.
         </p>
-      </div>
+      </SectionBlock>
 
-      <div className="tier-three p-5">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-          Intake actions to lock
-        </p>
+      <SectionBlock eyebrow="Intake actions to lock" className="tier-three p-5">
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {intakeData.guidance.nextActions.map((action) => {
             const isDone = completedActions.includes(action);
@@ -161,7 +162,7 @@ export default function IntakeScreen() {
           These guide rails do not save anywhere yet—they simply show how Propelo
           keeps intake structured.
         </p>
-      </div>
+      </SectionBlock>
     </div>
   );
 }

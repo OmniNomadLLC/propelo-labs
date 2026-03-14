@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SectionBlock } from "@/app/ui/primitives";
 import { wrapUpData } from "../demo-data";
 
 type SnapshotKey = keyof typeof wrapUpData.snapshot;
@@ -56,20 +57,18 @@ export default function WrapScreen() {
         </p>
       </header>
 
-      <div className="tier-one p-6">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-          Session summary
-        </p>
+      <SectionBlock eyebrow="Session summary" className="tier-one p-6">
         <p className="mt-3 text-lg leading-relaxed text-slate-100">
           {wrapUpData.sessionSummary}
         </p>
-      </div>
+      </SectionBlock>
 
       <div className="grid gap-5 md:grid-cols-3">
-        <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-emerald-200">
-            Proof of work
-          </p>
+        <SectionBlock
+          eyebrow="Proof of work"
+          className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-emerald-200"
+        >
           <ul className="mt-3 space-y-2 text-sm text-emerald-50">
             {wrapUpData.proofPoints.map((point) => (
               <li key={point} className="rounded-xl bg-black/10 px-3 py-2">
@@ -77,11 +76,12 @@ export default function WrapScreen() {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-amber-200">
-            Risks to watch
-          </p>
+        </SectionBlock>
+        <SectionBlock
+          eyebrow="Risks to watch"
+          className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-amber-200"
+        >
           <ul className="mt-3 space-y-2 text-sm text-amber-50">
             {wrapUpData.risks.map((risk) => (
               <li key={risk} className="rounded-xl bg-black/10 px-3 py-2">
@@ -89,11 +89,12 @@ export default function WrapScreen() {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
-            Next steps
-          </p>
+        </SectionBlock>
+        <SectionBlock
+          eyebrow="Next steps"
+          className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-slate-200"
+        >
           <ul className="mt-3 space-y-2 text-sm text-slate-100">
             {wrapUpData.nextSteps.map((step) => (
               <li key={step} className="rounded-xl bg-black/20 px-3 py-2">
@@ -101,7 +102,7 @@ export default function WrapScreen() {
               </li>
             ))}
           </ul>
-        </div>
+        </SectionBlock>
       </div>
 
       <div className="tier-one p-6 text-sm text-slate-100">

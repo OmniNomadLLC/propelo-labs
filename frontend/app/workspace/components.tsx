@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { StatusChip } from "@/app/ui/primitives";
 
 const navItems = [
   { href: "/workspace/intake", label: "Project Intake" },
@@ -29,9 +30,7 @@ export function SidebarNav() {
             }`}
           >
             <span>{item.label}</span>
-            <span className="text-xs tracking-[0.3em] text-slate-500">
-              {isActive ? "NOW" : "GO"}
-            </span>
+            <StatusChip label={isActive ? "NOW" : "GO"} className="text-slate-500" />
             <span
               className={`absolute inset-y-1 -left-1 w-1 rounded-full transition ${
                 isActive

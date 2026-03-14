@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SectionBlock } from "@/app/ui/primitives";
 import { taskBoard } from "../demo-data";
 
 const modes = ["All", ...taskBoard.columns.map((column) => column.title)];
@@ -68,13 +69,12 @@ export default function TasksScreen() {
         })}
       </div>
 
-      <div className="tier-three p-5 text-sm text-slate-200">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Rules</p>
+      <SectionBlock eyebrow="Rules" className="tier-three p-5 text-sm text-slate-200">
         <p className="mt-2">
           Every task requires a proof-of-work artifact. Promote tasks to Ready
           only after QA sign-off captured in Wrap-up.
         </p>
-      </div>
+      </SectionBlock>
     </div>
   );
 }

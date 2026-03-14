@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ComponentType, type SVGProps } from "react";
+import { SectionBlock } from "@/app/ui/primitives";
 import { brainData } from "../demo-data";
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -38,39 +39,6 @@ const IconDial: ComponentType<IconProps> = ({ className = iconBase, ...props }) 
   </svg>
 );
 
-const Column = ({
-  title,
-  items,
-  tone = "default",
-}: {
-  title: string;
-  items: string[];
-  tone?: "default" | "alert";
-}) => (
-  <div
-    className={`text-sm p-5 ${
-      tone === "alert"
-        ? "rounded-2xl border border-rose-500/40 bg-rose-500/10"
-        : "tier-three"
-    }`}
-  >
-    <p
-      className={`text-xs uppercase tracking-[0.4em] ${
-        tone === "alert" ? "text-rose-200" : "text-slate-500"
-      }`}
-    >
-      {title}
-    </p>
-    <ul className="mt-3 space-y-2 text-slate-100">
-      {items.map((item) => (
-        <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
-          {item}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
 const signalMetrics = [
   {
     label: "Decisions locked",
@@ -105,7 +73,18 @@ export default function BrainScreen() {
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <Column title="Decisions locked in" items={brainData.decisions} />
+        <SectionBlock
+          eyebrow="Decisions locked in"
+          className="tier-three p-5 text-sm"
+        >
+          <ul className="mt-3 space-y-2 text-slate-100">
+            {brainData.decisions.map((item) => (
+              <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </SectionBlock>
         <div className="tier-two flex flex-col gap-5 rounded-3xl p-6 text-sm text-slate-200">
           <div className="flex items-center justify-between">
             <div>
@@ -149,12 +128,37 @@ export default function BrainScreen() {
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <Column title="Working assumptions" items={brainData.assumptions} />
-        <Column title="Risks" items={brainData.risks} tone="alert" />
+        <SectionBlock
+          eyebrow="Working assumptions"
+          className="tier-three p-5 text-sm"
+        >
+          <ul className="mt-3 space-y-2 text-slate-100">
+            {brainData.assumptions.map((item) => (
+              <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </SectionBlock>
+        <SectionBlock
+          eyebrow="Risks"
+          className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 text-sm"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-rose-200"
+        >
+          <ul className="mt-3 space-y-2 text-rose-50">
+            {brainData.risks.map((item) => (
+              <li key={item} className="rounded-xl bg-black/20 px-3 py-2">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </SectionBlock>
       </div>
 
-      <div className="tier-three p-5 text-sm text-slate-300">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Open questions</p>
+      <SectionBlock
+        eyebrow="Open questions"
+        className="tier-three p-5 text-sm text-slate-300"
+      >
         <div className="mt-4 space-y-3">
           {brainData.openQuestions.map((question) => {
             const isOpen = expandedQuestion === question;
@@ -181,15 +185,14 @@ export default function BrainScreen() {
             Promote resolved questions to Decisions. Unresolved ones block the Scope handoff.
           </p>
         )}
-      </div>
+      </SectionBlock>
 
-      <div className="tier-three p-5 text-sm text-slate-200">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Focus</p>
+      <SectionBlock eyebrow="Focus" className="tier-three p-5 text-sm text-slate-200">
         <p className="mt-3">
           Promote answers from Open Questions once validated. Move risks into the Task Board when
           mitigation tasks exist.
         </p>
-      </div>
+      </SectionBlock>
     </div>
   );
 }

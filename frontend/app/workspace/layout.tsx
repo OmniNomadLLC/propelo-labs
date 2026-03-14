@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { SidebarNav } from "./components";
 import { projectSummary } from "./demo-data";
+import { InfoRow } from "@/app/ui/primitives";
 
 export default function WorkspaceLayout({
   children,
@@ -40,29 +41,14 @@ export default function WorkspaceLayout({
             <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
               Project summary
             </p>
-             <dl className="mt-4 space-y-2">
-               <div className="flex items-center justify-between">
-                 <dt className="text-slate-500">Type</dt>
-                 <dd className="text-white">{projectSummary.type}</dd>
-               </div>
-               <div className="flex items-center justify-between">
-                 <dt className="text-slate-500">Owner</dt>
-                 <dd className="text-white">{projectSummary.owner}</dd>
-               </div>
-               <div className="flex items-center justify-between">
-                 <dt className="text-slate-500">Status</dt>
-                 <dd className="text-white">{projectSummary.status}</dd>
-               </div>
-               <div className="flex items-center justify-between">
-                 <dt className="text-slate-500">Cadence</dt>
-                 <dd className="text-white">{projectSummary.cadence}</dd>
-               </div>
-               <div className="flex items-center justify-between">
-                 <dt className="text-slate-500">Last update</dt>
-                 <dd className="text-white">{projectSummary.lastUpdated}</dd>
-               </div>
-             </dl>
-           </div>
+            <div className="mt-4 space-y-2">
+              <InfoRow label="Type" value={projectSummary.type} />
+              <InfoRow label="Owner" value={projectSummary.owner} />
+              <InfoRow label="Status" value={projectSummary.status} />
+              <InfoRow label="Cadence" value={projectSummary.cadence} />
+              <InfoRow label="Last update" value={projectSummary.lastUpdated} />
+            </div>
+          </div>
            <SidebarNav />
          </aside>
 

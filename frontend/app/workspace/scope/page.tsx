@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SectionBlock } from "@/app/ui/primitives";
 import { scopeBlueprint } from "../demo-data";
 
 export default function ScopeScreen() {
@@ -50,10 +51,11 @@ export default function ScopeScreen() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-green-400/30 bg-green-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-green-200">
-            In scope
-          </p>
+        <SectionBlock
+          eyebrow="In scope"
+          className="rounded-2xl border border-green-400/30 bg-green-500/10 p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-green-200"
+        >
           <ul className="mt-3 space-y-2 text-sm text-green-50">
             {scopeBlueprint.inScope.map((item) => (
               <li key={item} className="rounded-xl bg-black/10 px-3 py-2">
@@ -61,11 +63,12 @@ export default function ScopeScreen() {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-rose-200">
-            Out of scope (for now)
-          </p>
+        </SectionBlock>
+        <SectionBlock
+          eyebrow="Out of scope (for now)"
+          className="rounded-2xl border border-rose-400/40 bg-rose-500/10 p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-rose-200"
+        >
           <ul className="mt-3 space-y-2 text-sm text-rose-50">
             {scopeBlueprint.outOfScope.map((item) => (
               <li key={item} className="rounded-xl bg-black/10 px-3 py-2">
@@ -73,13 +76,10 @@ export default function ScopeScreen() {
               </li>
             ))}
           </ul>
-        </div>
+        </SectionBlock>
       </div>
 
-      <div className="tier-two p-6">
-        <p className="text-xs uppercase tracking-[0.4em] text-slate-500">
-          Phased blueprint
-        </p>
+      <SectionBlock eyebrow="Phased blueprint" className="tier-two p-6">
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {scopeBlueprint.phases.map((phase) => (
             <div
@@ -103,13 +103,14 @@ export default function ScopeScreen() {
             </div>
           ))}
         </div>
-      </div>
+      </SectionBlock>
 
       <div className="space-y-4">
-        <div className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
-            Recommended implementation path
-          </p>
+        <SectionBlock
+          eyebrow="Recommended implementation path"
+          className="rounded-2xl border border-sky-400/40 bg-sky-500/10 p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-slate-200"
+        >
           <div className="mt-4 flex flex-wrap gap-3">
             {scopeBlueprint.overview.implementationPath.map((step) => (
               <button
@@ -135,12 +136,13 @@ export default function ScopeScreen() {
               execute.
             </p>
           </div>
-        </div>
+        </SectionBlock>
 
-        <div className="tier-three p-5">
-          <p className="text-xs uppercase tracking-[0.4em] text-slate-200">
-            Automation flow logic
-          </p>
+        <SectionBlock
+          eyebrow="Automation flow logic"
+          className="tier-three p-5"
+          eyebrowClassName="text-xs uppercase tracking-[0.4em] text-slate-200"
+        >
           <div className="mt-4 grid gap-3 md:grid-cols-5">
             {scopeBlueprint.automationFlow.map((node) => (
               <div
@@ -157,7 +159,7 @@ export default function ScopeScreen() {
           <p className="mt-4 text-xs text-slate-300">
             Each stage pairs with QA gates before advancing into the Task Board.
           </p>
-        </div>
+        </SectionBlock>
       </div>
     </div>
   );
